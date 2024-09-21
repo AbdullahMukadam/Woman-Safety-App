@@ -11,7 +11,6 @@ import CreateToken from "../Utils/CreateToken.js";
 
   const emailExits = await User.findOne({email})
   if(emailExits){
-    res.status(401)
     return res.status(409).json({ message: "Email already exists" });
   }
 
@@ -42,7 +41,47 @@ import CreateToken from "../Utils/CreateToken.js";
  }
 
  const Login =async (req,res)=>{
-  const {email, password} = req.body
+  const {email, password} = req.body;
+
+  const exitsEmail = await User.findOne({email})
+
+  if(!exitsEmail){
+    return res.status(401).json({message:"No User Found"})
+  } else{
+    const comparePassword = await bcrypt.compare(password, exitsEmail.password);
+    if(comparePassword){
+      const token = CreateToken(exitsEmail._id)
+
+      res.cookie("jwt", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        maxAge:30 * 24 * 60 * 60 * 1000,
+      })
+        .status(200).json({
+            _id:exitsEmail._id,
+            email:exitsEmail.email,
+            profilephoto:exitsEmail.profilePhoto,
+            reviews:exitsEmail.reviews
+        })
+    }else{
+      res.status(409).json({message:"Invalid Credentials"})
+    }
+  }
  }
 
- export {Signup, Login}
+ const Logout = async (req, res)=>{
+  try {
+    res.cookie("jwt", "",{
+      expiresIn: new Date()
+    }).json({message:"Logout Seccusfully"})
+  } catch (error) {
+    res.status(400).json({message:"Logout Unsuccesful"})
+  }
+  
+ }
+
+const GoogleAuthController =async (req, res)=>{
+
+}
+
+ export {Signup, Login, Logout, GoogleAuthController}
