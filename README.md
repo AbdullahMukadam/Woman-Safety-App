@@ -1,1 +1,1 @@
-  Currently Working On this project, soon in will be completed.
+  Currently Working On this project, soon it will be completed.
