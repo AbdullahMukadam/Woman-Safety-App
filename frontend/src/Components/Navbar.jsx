@@ -7,7 +7,7 @@ function Navbar() {
         setOpen(!isOpen)
     }
     return (
-        <div className='w-full p-3 flex items-center justify-between shadow-[rgba(7,_65,_210,_0.1)_0px_4px_17px] sticky top-0'>
+        <div className='w-full p-3 flex items-center justify-between shadow-[rgba(7,_65,_210,_0.1)_0px_4px_17px] sticky top-0 z-[100]'>
             <div className='w-[40%] p-2'>
                 <img className='h-9' src="/logo.svg" alt="" />
             </div>
