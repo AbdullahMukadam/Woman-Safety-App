@@ -81,7 +81,8 @@ import CreateToken from "../Utils/CreateToken.js";
  }
 
 const GoogleAuthController =async (req, res)=>{
-
+    
+    
 }
 
  export {Signup, Login, Logout, GoogleAuthController}
