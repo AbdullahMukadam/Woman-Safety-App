@@ -1,62 +1,53 @@
-import React from 'react'
+import TestimonialCard from "../TestimonyCard";
+import React from "react";
 
 function Testimony() {
+    const testimonials = [
+        {
+            name: 'Alice Dorman',
+            content: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit. Beatae magni deleniti, quos temporibus repudiandae cupiditate minus autem repellat quasi omnis praesentium harum laborum, animi voluptatibus totam.'
+        },
+        {
+            name: 'John Smith',
+            content: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit. Beatae magni deleniti, quos temporibus repudiandae cupiditate minus autem repellat quasi omnis praesentium harum laborum, animi voluptatibus totam.'
+        },
+        {
+            name: 'Emma Wilson',
+            content: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit. Beatae magni deleniti, quos temporibus repudiandae cupiditate minus autem repellat quasi omnis praesentium harum laborum, animi voluptatibus totam.'
+        },
+        {
+            name: 'Michael Brown',
+            content: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit. Beatae magni deleniti, quos temporibus repudiandae cupiditate minus autem repellat quasi omnis praesentium harum laborum, animi voluptatibus totam.'
+        }
+    ];
+
     return (
-        <div className='w-full rounded-xl'>
-            <div className='w-full relative'>
-                <div className='absolute w-full p-3 z-10 flex flex-col gap-3 md:flex-row flex-wrap items-center justify-center'>
-                    <div className='w-full h-[40vh] p-1 bg-white rounded-lg border-2 border-dotted border-black md:h-[45vh] md:w-[45%]'>
-                        <div className='w-full p-2'>
-                            <img className='h-6' src="/logo.svg" alt="" />
-                        </div>
-                        <h1 className='h-[70%] font-semibold text-[15px] text-wrap text-center border-b-[1px] border-black flex items-center justify-center'>
-                            Lorem ipsum, dolor sit amet consectetur adipisicing elit. Beatae magni deleniti, quos temporibus repudiandae cupiditate minus autem repellat quasi omnis praesentium harum laborum, animi voluptatibus totam.
-                        </h1>
-                        <div className='w-full p-1'>
-                            <h1 className='font-bold text-xl'>Alice Dorman</h1>
-                        </div>
-                        
-                    </div>
-                    <div className='w-full p-1 bg-white rounded-lg border-2 border-dotted border-black h-[40vh] md:h-[45vh] md:w-[45%] hidden md:block'>
-                        <div className='w-full p-2'>
-                            <img className='h-6' src="/logo.svg" alt="" />
-                        </div>
-                        <h1 className='h-[70%] font-semibold text-wrap text-center border-b-[1px] border-black flex items-center justify-center text-[15px]'>
-                            Lorem ipsum, dolor sit amet consectetur adipisicing elit. Beatae magni deleniti, quos temporibus repudiandae cupiditate minus autem repellat quasi omnis praesentium harum laborum, animi voluptatibus totam.
-                        </h1>
-                        <div className='w-full p-1'>
-                            <h1 className='font-bold text-xl'>Alice Dorman</h1>
-                        </div>                        
-                    </div>
-                    <div className='w-full p-1 bg-white rounded-lg border-2 border-dotted border-black h-[40vh] md:h-[45vh] md:w-[45%] hidden md:block'>
-                        <div className='w-full p-2'>
-                            <img className='h-6' src="/logo.svg" alt="" />
-                        </div>
-                        <h1 className='h-[70%] font-semibold text-wrap text-center border-b-[1px] border-black flex items-center justify-center text-[15px]'>
-                            Lorem ipsum, dolor sit amet consectetur adipisicing elit. Beatae magni deleniti, quos temporibus repudiandae cupiditate minus autem repellat quasi omnis praesentium harum laborum, animi voluptatibus totam.
-                        </h1>
-                        <div className='w-full p-1'>
-                            <h1 className='font-bold text-xl'>Alice Dorman</h1>
-                        </div>                        
-                    </div>
-                    <div className='w-full p-1 bg-white rounded-lg border-2 border-dotted border-black h-[40vh] md:h-[45vh] md:w-[45%] hidden md:block'>
-                        <div className='w-full p-2'>
-                            <img className='h-6' src="/logo.svg" alt="" />
-                        </div>
-                        <h1 className='h-[70%] font-semibold text-wrap text-center border-b-[1px] border-black flex items-center justify-center text-[15px]'>
-                            Lorem ipsum, dolor sit amet consectetur adipisicing elit. Beatae magni deleniti, quos temporibus repudiandae cupiditate minus autem repellat quasi omnis praesentium harum laborum, animi voluptatibus totam.
-                        </h1>
-                        <div className='w-full p-1'>
-                            <h1 className='font-bold text-xl'>Alice Dorman</h1>
-                        </div>                        
+        <section className='w-full rounded-xl bg-gradient-to-r from-violet-200 to-pink-200 mb-8'>
+            <div className='w-full relative py-12'>
+                <div className='w-full p-6 z-10 relative'>
+                    <h1 className='text-3xl font-bold text-center mb-8 text-gray-800'>What Our Clients Say</h1>
+                    <div className='flex flex-col gap-6 md:flex-row md:flex-wrap md:justify-center md:items-stretch'>
+                        {testimonials.map((testimonial, index) => (
+                            <React.Fragment key={index}>
+                                {(index === 0 || window.innerWidth >= 768) && (
+                                    <TestimonialCard
+                                        name={testimonial.name}
+                                        content={testimonial.content}
+                                    />
+                                    
+                                )}
+                            </React.Fragment>
+                        ))}
                     </div>
                 </div>
-                <img className='w-full h-fit min-h-full object-cover relative opacity-0 md:opacity-100' src="/background.svg" alt="" />
+                <img 
+                    className='w-full h-full object-cover absolute top-0 left-0 opacity-0 md:opacity-10 transition-opacity duration-300' 
+                    src="/background.svg" 
+                    alt="Background pattern" 
+                />
             </div>
-        </div>
-    )
+        </section>
+    );
 }
 
-
-
-export default Testimony
+export default Testimony;

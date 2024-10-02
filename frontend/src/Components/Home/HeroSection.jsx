@@ -83,11 +83,7 @@ function HeroSection() {
             <div className='w-full p-1'>
                 <Testimony />
             </div>
-            <div className='w-full p-4 bg-black text-white rounded-lg md:hidden'>
-                <div className='w-full h-fit'>
-                    <img className='h-full' src="/background.svg" alt="" />
-                </div>
-            </div>
+            
         </div>
     )
 }
