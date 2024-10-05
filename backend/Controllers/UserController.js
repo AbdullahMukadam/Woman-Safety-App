@@ -1,88 +1,157 @@
 import User from "../Models/UserModel.js";
-import bcrypt from "bcryptjs"
+import bcrypt from "bcryptjs";
 import CreateToken from "../Utils/CreateToken.js";
+import { OAuth2Client } from 'google-auth-library';
 
- const Signup = async (req, res)=>{
-  const {username, email, password} = req.body;
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+const Signup = async (req, res) => {
+  const { username, email, password } = req.body;
 
   if (!username || !email || !password) {
     return res.status(400).json({ message: "Please enter all the fields" });
   }
 
-  const emailExits = await User.findOne({email})
-  if(emailExits){
+  const emailExits = await User.findOne({ email });
+  if (emailExits) {
     return res.status(409).json({ message: "Email already exists" });
   }
 
   try {
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password,salt)
-    const NewUser = await new User({username, email, password:hashedPassword})
-    if(NewUser){
-        await NewUser.save();
+    const hashedPassword = await bcrypt.hash(password, salt);
+    const NewUser = await new User({
+      username,
+      email,
+      password: hashedPassword,
+      isGoogleUser: false
+    });
 
-      const Token = CreateToken(NewUser._id)
+    if (NewUser) {
+      await NewUser.save();
+
+      const Token = CreateToken(NewUser._id);
       res.cookie("jwt", Token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        maxAge:30 * 24 * 60 * 60 * 1000,
+        maxAge: 30 * 24 * 60 * 60 * 1000,
       })
         .status(200).json({
-            _id:NewUser._id,
-            email:NewUser.email,
-            profilephoto:NewUser.profilePhoto,
-            reviews:NewUser.reviews
-        })
+          _id: NewUser._id,
+          email: NewUser.email,
+          profilephoto: NewUser.profilePhoto,
+          reviews: NewUser.reviews
+        });
     }
-
   } catch (error) {
     res.status(500).json({ message: "An error occurred during signup" });
   }
- }
+};
 
- const Login =async (req,res)=>{
-  const {email, password} = req.body;
+const Login = async (req, res) => {
+  const { email, password } = req.body;
 
-  const exitsEmail = await User.findOne({email})
+  const exitsEmail = await User.findOne({ email });
 
-  if(!exitsEmail){
-    return res.status(401).json({message:"No User Found"})
-  } else{
+  if (!exitsEmail) {
+    return res.status(401).json({ message: "No User Found" });
+  } else {
     const comparePassword = await bcrypt.compare(password, exitsEmail.password);
-    if(comparePassword){
-      const token = CreateToken(exitsEmail._id)
+    if (comparePassword) {
+      const token = CreateToken(exitsEmail._id);
 
       res.cookie("jwt", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        maxAge:30 * 24 * 60 * 60 * 1000,
+        maxAge: 30 * 24 * 60 * 60 * 1000,
       })
         .status(200).json({
-            _id:exitsEmail._id,
-            email:exitsEmail.email,
-            profilephoto:exitsEmail.profilePhoto,
-            reviews:exitsEmail.reviews
-        })
-    }else{
-      res.status(409).json({message:"Invalid Credentials"})
+          _id: exitsEmail._id,
+          email: exitsEmail.email,
+          profilephoto: exitsEmail.profilePhoto,
+          reviews: exitsEmail.reviews
+        });
+    } else {
+      res.status(409).json({ message: "Invalid Credentials" });
     }
   }
- }
+};
 
- const Logout = async (req, res)=>{
+const Logout = async (req, res) => {
   try {
-    res.cookie("jwt", "",{
+    res.cookie("jwt", "", {
       expiresIn: new Date()
-    }).json({message:"Logout Seccusfully"})
+    }).json({ message: "Logout Successfully" });
   } catch (error) {
-    res.status(400).json({message:"Logout Unsuccesful"})
+    res.status(400).json({ message: "Logout Unsuccessful" });
   }
-  
- }
+};
 
-const GoogleAuthController =async (req, res)=>{
-    
-    
-}
+const GoogleAuthController = async (req, res) => {
+  try {
+      const { email, name, googleId, picture } = req.body;
 
- export {Signup, Login, Logout, GoogleAuthController}
+      // Check if user already exists
+      let existingUser = await User.findOne({ email });
+
+      if (existingUser) {
+          // If user exists but it's not a Google user, prevent login
+          if (!existingUser.isGoogleUser) {
+              return res.status(400).json({
+                  message: "This email is already registered with a different login method"
+              });
+          }
+
+          // Update existing Google user's information
+          existingUser.googleId = googleId;
+          if (picture) {
+              existingUser.profilePhoto = picture;
+          }
+          await existingUser.save();
+
+          const token = CreateToken(existingUser._id);
+          
+          return res.cookie("jwt", token, {
+              httpOnly: true,
+              secure: process.env.NODE_ENV === "production",
+              maxAge: 30 * 24 * 60 * 60 * 1000,
+          }).status(200).json({
+              _id: existingUser._id,
+              email: existingUser.email,
+              profilephoto: existingUser.profilePhoto,
+              reviews: existingUser.reviews
+          });
+      }
+
+      // Create new user if doesn't exist
+      const newUser = await User.create({
+          username: name,
+          email,
+          googleId,
+          profilePhoto: picture || "../Utils/woman.webp", // Use default if no picture
+          isGoogleUser: true,
+          reviews: [] // Initialize empty reviews array
+      });
+
+      const token = CreateToken(newUser._id);
+
+      res.cookie("jwt", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          maxAge: 30 * 24 * 60 * 60 * 1000,
+      }).status(200).json({
+          _id: newUser._id,
+          email: newUser.email,
+          profilephoto: newUser.profilePhoto,
+          reviews: newUser.reviews
+      });
+
+  } catch (error) {
+      console.error('Google auth error:', error);
+      res.status(500).json({
+          message: "An error occurred during Google authentication"
+      });
+  }
+};
+
+export { Signup, Login, Logout, GoogleAuthController };

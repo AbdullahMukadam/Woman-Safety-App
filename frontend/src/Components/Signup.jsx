@@ -3,39 +3,95 @@ import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useForm } from "react-hook-form";
 import axios from "axios";
 import { Config } from '../../API/Config';
-import { Button } from "@/components/ui/button";
+import { useGoogleLogin } from "@react-oauth/google"
+import { useContext } from 'react';
+import { AuthContext } from '../Context/AuthContext';
 
 function Signup() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [password, setPassword] = useState("")
-    const { register, handleSubmit } = useForm()
+    const [password, setPassword] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const { register, handleSubmit } = useForm();
     const [errors, setErrors] = useState("");
+    const {setAuth} = useContext(AuthContext)
+    const {auth} = useContext(AuthContext)
 
     const Submit = async (data) => {
-        setErrors("")
-        try {          
+        setErrors("");
+        try {
             if (data.password !== password) {
-                setErrors("Password Doesn't match")
-            } else {
-                const response = await axios.post(Config.SignUPUrl, {
-                    username: data.userName,
-                    email: data.email,
-                    password: data.password
-                })
-                if (response) {
-                    console.log(response.data)
-                }
+                setErrors("Password Doesn't match");
+                return;
+            }
+
+            setIsLoading(true);
+            const response = await axios.post(Config.SignUPUrl, {
+                username: data.userName,
+                email: data.email,
+                password: data.password
+            });
+
+            if (response.data) {
+                // Handle successful signup
+                console.log("Signup successful:", response.data);
+                setAuth(true)
+                console.log("normal auth status :", auth)
+                // Redirect or show success message
             }
         } catch (error) {
-            setErrors(error.message)
+            setErrors(error.response?.data?.message || error.message);
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const handleGoogleSignup = () => {
-        // Implement Google OAuth login logic here
-        console.log("Google signup clicked");
+    const handleGoogleSuccess = async (tokenResponse) => {
+        try {
+            setIsLoading(true);
+            // Get user info from Google
+            const userInfoResponse = await axios.get(
+                'https://www.googleapis.com/oauth2/v3/userinfo',
+                {
+                    headers: {
+                        Authorization: `Bearer ${tokenResponse.access_token}`
+                    }
+                }
+            );
+
+            const googleUser = userInfoResponse.data;
+
+            // Send the Google user data to your backend
+            const response = await axios.post(Config.GoogleSignUpUrl, {
+                email: googleUser.email,
+                googleId: googleUser.sub,
+                name: googleUser.name,
+                picture: googleUser.picture
+            });
+
+            if (response.data) {
+                // Handle successful Google signup
+                console.log("Google signup successful:", response.data);
+                setAuth(true)
+                console.log("google autn status : " , auth)
+                // Store the token, redirect, etc.
+            }
+        } catch (error) {
+            setErrors("Google signup failed: " + (error.response?.data?.message || error.message));
+            console.error("Google signup error:", error);
+        } finally {
+            setIsLoading(false);
+        }
     };
+
+    const handleGoogleSignup = useGoogleLogin({
+        onSuccess: handleGoogleSuccess,
+        onError: (error) => {
+            console.error("Google login error:", error);
+            setErrors("Google signup failed. Please try again.");
+        },
+        scope: "email profile",
+    });
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-gray-100 p-4">
@@ -50,19 +106,26 @@ function Signup() {
                 {/* Signup Form */}
                 <form onSubmit={handleSubmit(Submit)} className="bg-white rounded-lg border-2 border-dotted border-black p-6 space-y-4">
                     {/* Google Sign Up Button */}
-                    <Button
+                    <button
                         type="button"
-                        variant="outline"
-                        className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-gray-200 hover:bg-gray-50"
-                        onClick={handleGoogleSignup}
+                        disabled={isLoading}
+                        className={`w-full flex items-center justify-center gap-2 py-2.5 border-2 border-gray-200 hover:bg-gray-50 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
+                        onClick={() => handleGoogleSignup()}
                     >
-                        <img 
-                            src="/api/placeholder/20/20"
+                        <img
+                            src="/google.jfif"
                             alt="Google logo"
                             className="w-5 h-5"
                         />
-                        Sign up with Google
-                    </Button>
+                        {isLoading ? 'Loading...' : 'Sign up with Google'}
+                    </button>
+
+                    {errors && (
+                        <div className="text-red-500 text-sm text-center">
+                            {errors}
+                        </div>
+                    )}
 
                     <div className="relative flex py-5 items-center">
                         <div className="flex-grow border-t border-gray-200"></div>

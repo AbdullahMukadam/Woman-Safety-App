@@ -3,32 +3,76 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { Config } from '../../API/Config';
+import { useGoogleLogin } from "@react-oauth/google";
 
 function Login() {
     const [showPassword, setShowPassword] = useState(false);
-    const { register, handleSubmit } = useForm()
+    const [isLoading, setIsLoading] = useState(false);
+    const { register, handleSubmit } = useForm();
     const [errors, setErrors] = useState("");
 
-
-
     const Submit = async (data) => {
-        setErrors("")
+        setErrors("");
+        setIsLoading(true);
         try {
-            const response = await axios.post(Config.LOGINUrl , {
+            const response = await axios.post(Config.LOGINUrl, {
                 email: data.email,
                 password: data.password
-            })
+            });
             if (response) {
-                console.log(response.data)
+                console.log(response.data);
             }
         } catch (error) {
-            setErrors(error.message)
+            setErrors(error.response?.data?.message || error.message);
+        } finally {
+            setIsLoading(false);
         }
-
-
     };
 
+    const handleGoogleSuccess = async (tokenResponse) => {
+        try {
+            setIsLoading(true);
+            setErrors("");
 
+            // Get user info from Google
+            const userInfoResponse = await axios.get(
+                'https://www.googleapis.com/oauth2/v3/userinfo',
+                {
+                    headers: {
+                        Authorization: `Bearer ${tokenResponse.access_token}`
+                    }
+                }
+            );
+
+            const googleUser = userInfoResponse.data;
+
+            // Send to your backend
+            const response = await axios.post(Config.GoogleSignUpUrl, {
+                email: googleUser.email,
+                name: googleUser.name,
+                googleId: googleUser.sub,
+                picture: googleUser.picture
+            });
+
+            if (response.data) {
+                console.log(response.data);
+                // Handle successful login (e.g., redirect, update state, etc.)
+            }
+        } catch (error) {
+            setErrors(error.response?.data?.message || "Failed to login with Google");
+            console.error("Google login error:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleGoogleLogin = useGoogleLogin({
+        onSuccess: handleGoogleSuccess,
+        onError: (error) => {
+            console.error("Google login error:", error);
+            setErrors("Failed to login with Google");
+        }
+    });
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-gray-100 p-4">
@@ -42,6 +86,27 @@ function Login() {
 
                 {/* Login Form */}
                 <form onSubmit={handleSubmit(Submit)} className="bg-white rounded-lg border-2 border-dotted border-black p-6 space-y-6">
+                    {/* Google Login Button */}
+                    <button
+                        type="button"
+                        disabled={isLoading}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-gray-200 hover:bg-gray-50 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => handleGoogleLogin()}
+                    >
+                        <img
+                            src="/google.jfif"
+                            alt="Google logo"
+                            className="w-5 h-5"
+                        />
+                        Sign in with Google
+                    </button>
+
+                    <div className="relative flex py-3 items-center">
+                        <div className="flex-grow border-t border-gray-200"></div>
+                        <span className="flex-shrink mx-4 text-gray-400">or</span>
+                        <div className="flex-grow border-t border-gray-200"></div>
+                    </div>
+
                     {/* Email Field */}
                     <div>
                         <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
@@ -58,8 +123,7 @@ function Login() {
                                     message: "invalid email address"
                                 }
                             })}
-                            className={`w-full px-4 py-2 rounded-lg border ${errors.email ? 'border-red-500' : 'border-gray-300'
-                                } focus:outline-none focus:border-black transition-colors duration-300`}
+                            className={`w-full px-4 py-2 rounded-lg border ${errors.email ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:border-black transition-colors duration-300`}
                             placeholder="Enter your email"
                         />
                         {errors.email && (
@@ -81,8 +145,7 @@ function Login() {
                                     required: true,
                                     maxLength: 20
                                 })}
-                                className={`w-full px-4 py-2 rounded-lg border ${errors.password ? 'border-red-500' : 'border-gray-300'
-                                    } focus:outline-none focus:border-black transition-colors duration-300`}
+                                className={`w-full px-4 py-2 rounded-lg border ${errors.password ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:border-black transition-colors duration-300`}
                                 placeholder="Enter your password"
                             />
                             <button
@@ -118,9 +181,10 @@ function Login() {
                     {/* Submit Button */}
                     <button
                         type="submit"
-                        className="w-full bg-black text-white rounded-lg py-2.5 font-semibold hover:bg-gray-800 transition-colors duration-300"
+                        disabled={isLoading}
+                        className="w-full bg-black text-white rounded-lg py-2.5 font-semibold hover:bg-gray-800 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        Sign In
+                        {isLoading ? 'Signing in...' : 'Sign In'}
                     </button>
 
                     {/* Sign Up Link */}
