@@ -1,15 +1,19 @@
 import axios from 'axios';
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { Config } from '../../API/Config';
 import { useGoogleLogin } from "@react-oauth/google";
+import { Link, useNavigate } from 'react-router-dom';
+import { AuthContext } from '../Context/AuthContext';
 
 function Login() {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const { register, handleSubmit } = useForm();
     const [errors, setErrors] = useState("");
+    const navigate = useNavigate();
+    const {setAuth} = useContext(AuthContext)
 
     const Submit = async (data) => {
         setErrors("");
@@ -21,6 +25,8 @@ function Login() {
             });
             if (response) {
                 console.log(response.data);
+                setAuth(true)
+                navigate("/HomePage")
             }
         } catch (error) {
             setErrors(error.response?.data?.message || error.message);
@@ -56,7 +62,9 @@ function Login() {
 
             if (response.data) {
                 console.log(response.data);
-                // Handle successful login (e.g., redirect, update state, etc.)
+                setAuth(true)
+                navigate("/HomePage")
+                
             }
         } catch (error) {
             setErrors(error.response?.data?.message || "Failed to login with Google");
@@ -190,12 +198,12 @@ function Login() {
                     {/* Sign Up Link */}
                     <div className="text-center text-sm text-gray-600">
                         Don't have an account?{' '}
-                        <a
-                            href="/signup"
+                        <Link
+                            to={"/register"}
                             className="font-semibold text-black hover:underline"
                         >
                             Sign up
-                        </a>
+                        </Link>
                     </div>
                 </form>
             </div>

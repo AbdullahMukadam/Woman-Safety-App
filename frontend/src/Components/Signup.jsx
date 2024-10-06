@@ -6,6 +6,7 @@ import { Config } from '../../API/Config';
 import { useGoogleLogin } from "@react-oauth/google"
 import { useContext } from 'react';
 import { AuthContext } from '../Context/AuthContext';
+import { Link, useNavigate } from 'react-router-dom';
 
 function Signup() {
     const [showPassword, setShowPassword] = useState(false);
@@ -14,8 +15,8 @@ function Signup() {
     const [isLoading, setIsLoading] = useState(false);
     const { register, handleSubmit } = useForm();
     const [errors, setErrors] = useState("");
-    const {setAuth} = useContext(AuthContext)
-    const {auth} = useContext(AuthContext)
+    const {setAuth, auth} = useContext(AuthContext);
+    const navigate = useNavigate()
 
     const Submit = async (data) => {
         setErrors("");
@@ -36,7 +37,8 @@ function Signup() {
                 // Handle successful signup
                 console.log("Signup successful:", response.data);
                 setAuth(true)
-                console.log("normal auth status :", auth)
+                navigate("/HomePage")
+                
                 // Redirect or show success message
             }
         } catch (error) {
@@ -73,7 +75,7 @@ function Signup() {
                 // Handle successful Google signup
                 console.log("Google signup successful:", response.data);
                 setAuth(true)
-                console.log("google autn status : " , auth)
+                navigate("/HomePage")
                 // Store the token, redirect, etc.
             }
         } catch (error) {
@@ -256,12 +258,12 @@ function Signup() {
                     {/* Login Link */}
                     <div className="text-center text-sm text-gray-600">
                         Already have an account?{' '}
-                        <a
-                            href="/login"
+                        <Link
+                            to={"/login"}
                             className="font-semibold text-black hover:underline"
                         >
                             Sign in
-                        </a>
+                        </Link>
                     </div>
                 </form>
             </div>
