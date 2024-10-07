@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import BottomNav from "./Home/BottomNav";
-import "/App.css"
+import "../App.css"
 
 // Fix marker icons issue in Leaflet
 delete L.Icon.Default.prototype._getIconUrl;

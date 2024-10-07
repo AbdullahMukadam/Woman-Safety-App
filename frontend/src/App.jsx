@@ -8,6 +8,7 @@ import AfterLogin from "./Components/Home/AfterLogin"
 import ProtectedRoute from "./Components/ProtectedRoute"
 import Map from "./Components/Map"
 import Reviews from "./Components/Reviews"
+import Profile from "./Components/Profile"
 
 function App() {
   return (
@@ -33,6 +34,11 @@ function App() {
               </ProtectedRoute>
             } */ />
             <Route path="/reviews" element={<Reviews/>}  /* {
+              <ProtectedRoute>
+                <Reviews />
+              </ProtectedRoute>
+            } */ />
+            <Route path="/profile" element={<Profile/>}  /* {
               <ProtectedRoute>
                 <Reviews />
               </ProtectedRoute>
