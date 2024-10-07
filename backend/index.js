@@ -8,9 +8,20 @@ import cors from "cors"
 dotenv.config()
 const app = express()
 
+const isDevelopment = process.env.NODE_ENV === 'development';
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://192.168.152.133:5173',
+  ];
+
 app.use(cors({
-    origin: "http://localhost:5173"
-}))
+  origin: isDevelopment 
+    ? true 
+    : allowedOrigins, 
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
 app.use(cookieParser())

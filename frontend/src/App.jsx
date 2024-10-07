@@ -7,34 +7,40 @@ import Signup from './Components/Signup'
 import AfterLogin from "./Components/Home/AfterLogin"
 import ProtectedRoute from "./Components/ProtectedRoute"
 import Map from "./Components/Map"
-
+import Reviews from "./Components/Reviews"
 
 function App() {
-
-
   return (
-
-    <div className='w-screen min-h-screen bg-white flex flex-col'>
-      <BrowserRouter>
+    <BrowserRouter>
+      <div className="flex flex-col min-h-screen">
         <Navbar />
-        <Routes>
-          <Route path='/' element={<Home />} />
-          <Route path='/login' element={<Login />} />
-          <Route path='/register' element={<Signup />} />
-          <Route path='/HomePage' 
-          element={
-            <ProtectedRoute>
-             <AfterLogin />
-            </ProtectedRoute>
-
-          }
-          />
-          <Route path="/map" element={<Map />} />
-        </Routes>
-      </BrowserRouter>
-    </div>
-
-
+        <main className="flex-1 pt-[7px]">
+          <Routes>
+            <Route path='/' element={<Home />} />
+            <Route path='/login' element={<Login />} />
+            <Route path='/register' element={<Signup />} />
+            <Route path='/HomePage'
+              element={<AfterLogin/>}
+              /* {
+                <ProtectedRoute>
+                  <AfterLogin />
+                </ProtectedRoute>
+              } */
+            />
+            <Route path="/map" element={<Map/>}  /* {
+              <ProtectedRoute>
+                <Map />
+              </ProtectedRoute>
+            } */ />
+            <Route path="/reviews" element={<Reviews/>}  /* {
+              <ProtectedRoute>
+                <Reviews />
+              </ProtectedRoute>
+            } */ />
+          </Routes>
+        </main>
+      </div>
+    </BrowserRouter>
   )
 }
 

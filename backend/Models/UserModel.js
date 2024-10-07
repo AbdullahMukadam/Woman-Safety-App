@@ -10,6 +10,10 @@ const ReviewSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    title:{
+        type: String,
+        required: true
+    },
     review: {
         type: String,
         required: true
@@ -29,7 +33,7 @@ const UserSchema = mongoose.Schema({
     password: {
         type: String,
         required: function() {
-            return !this.isGoogleUser; // Password only required for non-Google users
+            return !this.isGoogleUser; 
         }
     },
     profilePhoto: {
@@ -40,20 +44,19 @@ const UserSchema = mongoose.Schema({
         type: [ReviewSchema],
         default: []
     },
-    // New fields for Google Authentication
     googleId: {
         type: String,
-        sparse: true // This allows the field to be unique only when it exists
+        sparse: true 
     },
     isGoogleUser: {
         type: Boolean,
         default: false
     }
 }, {
-    timestamps: true // Add timestamps for created and updated dates
+    timestamps: true 
 });
 
-// Add index for googleId to improve query performance
+
 UserSchema.index({ googleId: 1 }, { sparse: true });
 
 const User = mongoose.model("User", UserSchema);
