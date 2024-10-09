@@ -13,17 +13,83 @@ import { Link } from 'react-router-dom'
 import MenuItem from './MenuItem'
 import SettingsSection from './SettingsSection'
 import ToggleItem from './ToggleItem'
+import { useState } from 'react'
 
+// API functions
+const updateUserField = async (field, value) => {
+    try {
+        const response = await fetch('/api/user/update', {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                field,
+                value
+            })
+        });
 
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
+        const data = await response.json();
+        return { success: true, data };
+    } catch (error) {
+        console.error('Error updating user field:', error);
+        return { success: false, error: error.message };
+    }
+};
 
 function Settings() {
-    const userEmail = "john.doe@example.com"
-    const username = "John Doe"
-    const phoneNumber = "+1 234 567 8900"
+    // User data state
+    const [username, setUsername] = useState("John Doe")
+    const [userEmail, setUserEmail] = useState("john.doe@example.com")
+    const [phoneNumber, setPhoneNumber] = useState("+1 234 567 8900")
+    const [language, setLanguage] = useState("English")
+
+    // Loading states
+    const [loadingStates, setLoadingStates] = useState({
+        username: false,
+        email: false,
+        phone: false,
+        language: false
+    })
+
+    // Error states
+    const [errorStates, setErrorStates] = useState({
+        username: '',
+        email: '',
+        phone: '',
+        language: ''
+    })
+
+    // Generic handler for updating user fields
+    const handleFieldUpdate = async (field, value, localStateSetter) => {
+        // Update loading state
+        setLoadingStates(prev => ({ ...prev, [field]: true }))
+        // Clear previous error
+        setErrorStates(prev => ({ ...prev, [field]: '' }))
+
+        const { success, error } = await updateUserField(field, value)
+
+        if (success) {
+            // Update local state
+            localStateSetter(value)
+        } else {
+            // Set error state
+            setErrorStates(prev => ({ 
+                ...prev, 
+                [field]: error || 'An error occurred while updating. Please try again.'
+            }))
+            // You might want to show a toast notification here
+        }
+
+        // Clear loading state
+        setLoadingStates(prev => ({ ...prev, [field]: false }))
+    }
 
     return (
-        
         <div className="min-h-screen bg-gray-50">
             {/* Header */}
             <div className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-10">
@@ -41,41 +107,63 @@ function Settings() {
                     <MenuItem
                         icon={User}
                         label="Username"
-                        value={username}
-                        onClick={() => {/* Handle username change */ }}
+                        initialValue={username}
+                        onUpdate={(value) => handleFieldUpdate('username', value, setUsername)}
+                        isLoading={loadingStates.username}
+                        error={errorStates.username}
                     />
                     <MenuItem
                         icon={Mail}
                         label="Email"
-                        value={userEmail}
-                        onClick={() => {/* Handle email change */ }}
+                        initialValue={userEmail}
+                        onUpdate={(value) => handleFieldUpdate('email', value, setUserEmail)}
+                        isLoading={loadingStates.email}
+                        error={errorStates.email}
+                        validation={(value) => {
+                            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                            return emailRegex.test(value) ? '' : 'Please enter a valid email address';
+                        }}
                     />
                     <MenuItem
                         icon={Phone}
                         label="Phone Number"
-                        value={phoneNumber}
-                        onClick={() => {/* Handle phone change */ }}
+                        initialValue={phoneNumber}
+                        onUpdate={(value) => handleFieldUpdate('phone', value, setPhoneNumber)}
+                        isLoading={loadingStates.phone}
+                        error={errorStates.phone}
+                        validation={(value) => {
+                            const phoneRegex = /^\+?[\d\s-]{10,}$/;
+                            return phoneRegex.test(value) ? '' : 'Please enter a valid phone number';
+                        }}
                     />
                     <MenuItem
                         icon={Lock}
                         label="Change Password"
-                        onClick={() => {/* Handle password change */ }}
+                        onUpdate={() => {
+                            // Navigate to password change page
+                            console.log('Navigating to password change page');
+                        }}
                     />
                 </SettingsSection>
 
-                {/* Notifications */}
                 <SettingsSection title="Notifications">
                     <ToggleItem
                         icon={Bell}
                         label="Push Notifications"
                         enabled={true}
-                        onToggle={() => {/* Handle toggle */ }}
+                        onToggle={(enabled) => {
+                            console.log('Push notifications:', enabled)
+                            // Add your push notifications toggle logic here
+                        }}
                     />
                     <ToggleItem
                         icon={Bell}
                         label="Email Notifications"
                         enabled={false}
-                        onToggle={() => {/* Handle toggle */ }}
+                        onToggle={(enabled) => {
+                            console.log('Email notifications:', enabled)
+                            // Add your email notifications toggle logic here
+                        }}
                     />
                 </SettingsSection>
 
@@ -85,13 +173,16 @@ function Settings() {
                         icon={Moon}
                         label="Dark Mode"
                         enabled={false}
-                        onToggle={() => {/* Handle toggle */ }}
+                        onToggle={(enabled) => {
+                            console.log('Dark mode:', enabled)
+                            // Add your dark mode toggle logic here
+                        }}
                     />
                     <MenuItem
                         icon={Languages}
                         label="Language"
-                        value="English"
-                        onClick={() => {/* Handle language change */ }}
+                        initialValue={language}
+                        onUpdate={setLanguage}
                     />
                 </SettingsSection>
 
@@ -100,12 +191,18 @@ function Settings() {
                     <MenuItem
                         icon={HelpCircle}
                         label="FAQs"
-                        onClick={() => {/* Handle FAQ navigation */ }}
+                        onUpdate={() => {
+                            console.log('Navigating to FAQs page')
+                            // Add your FAQ navigation logic here
+                        }}
                     />
                     <MenuItem
                         icon={HelpCircle}
                         label="Contact Support"
-                        onClick={() => {/* Handle support contact */ }}
+                        onUpdate={() => {
+                            console.log('Navigating to Support page')
+                            // Add your support navigation logic here
+                        }}
                     />
                 </SettingsSection>
 

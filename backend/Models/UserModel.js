@@ -10,7 +10,7 @@ const ReviewSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    title:{
+    title: {
         type: String,
         required: true
     },
@@ -18,7 +18,31 @@ const ReviewSchema = new mongoose.Schema({
         type: String,
         required: true
     }
+}, {
+    timestamps: true
 });
+
+const ContactSchema= mongoose.Schema({
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
+    },
+    photo:{
+        type: String,
+        default: "../Utils/woman.webp"
+    },
+    name: {
+        type: String,
+        required: true
+    },
+    MobileNo: {
+        type: String,
+        required: true
+    },
+},{
+    timestamps:true
+})
 
 const UserSchema = mongoose.Schema({
     username: {
@@ -32,8 +56,8 @@ const UserSchema = mongoose.Schema({
     },
     password: {
         type: String,
-        required: function() {
-            return !this.isGoogleUser; 
+        required: function () {
+            return !this.isGoogleUser;
         }
     },
     profilePhoto: {
@@ -44,16 +68,20 @@ const UserSchema = mongoose.Schema({
         type: [ReviewSchema],
         default: []
     },
+    contacts: {
+        type: [ContactSchema],
+        default: []
+    },
     googleId: {
         type: String,
-        sparse: true 
+        sparse: true
     },
     isGoogleUser: {
         type: Boolean,
         default: false
     }
 }, {
-    timestamps: true 
+    timestamps: true
 });
 
 

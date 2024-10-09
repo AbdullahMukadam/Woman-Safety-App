@@ -40,7 +40,8 @@ const Signup = async (req, res) => {
           _id: NewUser._id,
           email: NewUser.email,
           profilephoto: NewUser.profilePhoto,
-          reviews: NewUser.reviews
+          reviews: NewUser.reviews,
+          contacts: NewUser.contacts
         });
     }
   } catch (error) {
@@ -69,7 +70,8 @@ const Login = async (req, res) => {
           _id: exitsEmail._id,
           email: exitsEmail.email,
           profilephoto: exitsEmail.profilePhoto,
-          reviews: exitsEmail.reviews
+          reviews: exitsEmail.reviews,
+          contacts: exitsEmail.contacts
         });
     } else {
       res.status(409).json({ message: "Invalid Credentials" });
@@ -89,68 +91,73 @@ const Logout = async (req, res) => {
 
 const GoogleAuthController = async (req, res) => {
   try {
-      const { email, name, googleId, picture } = req.body;
+    const { email, name, googleId, picture } = req.body;
 
-      // Check if user already exists
-      let existingUser = await User.findOne({ email });
+    // Check if user already exists
+    let existingUser = await User.findOne({ email });
 
-      if (existingUser) {
-          // If user exists but it's not a Google user, prevent login
-          if (!existingUser.isGoogleUser) {
-              return res.status(400).json({
-                  message: "This email is already registered with a different login method"
-              });
-          }
-
-          // Update existing Google user's information
-          existingUser.googleId = googleId;
-          if (picture) {
-              existingUser.profilePhoto = picture;
-          }
-          await existingUser.save();
-
-          const token = CreateToken(existingUser._id);
-          
-          return res.cookie("jwt", token, {
-              httpOnly: true,
-              secure: process.env.NODE_ENV === "production",
-              maxAge: 30 * 24 * 60 * 60 * 1000,
-          }).status(200).json({
-              _id: existingUser._id,
-              email: existingUser.email,
-              profilephoto: existingUser.profilePhoto,
-              reviews: existingUser.reviews
-          });
+    if (existingUser) {
+      // If user exists but it's not a Google user, prevent login
+      if (!existingUser.isGoogleUser) {
+        return res.status(400).json({
+          message: "This email is already registered with a different login method"
+        });
       }
 
-      // Create new user if doesn't exist
-      const newUser = await User.create({
-          username: name,
-          email,
-          googleId,
-          profilePhoto: picture || "../Utils/woman.webp", // Use default if no picture
-          isGoogleUser: true,
-          reviews: [] // Initialize empty reviews array
-      });
+      // Update existing Google user's information
+      existingUser.googleId = googleId;
+      if (picture) {
+        existingUser.profilePhoto = picture;
+      }
+      await existingUser.save();
 
-      const token = CreateToken(newUser._id);
+      const token = CreateToken(existingUser._id);
 
-      res.cookie("jwt", token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          maxAge: 30 * 24 * 60 * 60 * 1000,
+      return res.cookie("jwt", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
       }).status(200).json({
-          _id: newUser._id,
-          email: newUser.email,
-          profilephoto: newUser.profilePhoto,
-          reviews: newUser.reviews
+        _id: existingUser._id,
+        email: existingUser.email,
+        profilephoto: existingUser.profilePhoto,
+        reviews: existingUser.reviews,
+        contacts: existingUser.contacts
+
       });
+    }
+
+    // Create new user if doesn't exist
+    const newUser = await User.create({
+      username: name,
+      email,
+      googleId,
+      profilePhoto: picture || "../Utils/woman.webp", // Use default if no picture
+      isGoogleUser: true,
+      reviews: [],
+      contacts: []
+      // Initialize empty reviews array
+    });
+
+    const token = CreateToken(newUser._id);
+
+    res.cookie("jwt", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    }).status(200).json({
+      _id: newUser._id,
+      email: newUser.email,
+      profilephoto: newUser.profilePhoto,
+      reviews: newUser.reviews,
+      contacts : newUser.contacts
+    });
 
   } catch (error) {
-      console.error('Google auth error:', error);
-      res.status(500).json({
-          message: "An error occurred during Google authentication"
-      });
+    console.error('Google auth error:', error);
+    res.status(500).json({
+      message: "An error occurred during Google authentication"
+    });
   }
 };
 
