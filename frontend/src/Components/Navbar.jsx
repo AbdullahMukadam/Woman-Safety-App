@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../Context/AuthContext';
 import axios from 'axios';
@@ -7,8 +7,20 @@ import { Config } from '../../API/Config';
 function Navbar() {
     const [isOpen, setOpen] = useState(false);
     const navigate = useNavigate();
-    const { auth, setAuth } = useContext(AuthContext);
+    const { auth, setAuth, logout } = useContext(AuthContext);
     const [error, setError] = useState("")
+
+    /* useEffect(() => {
+        const handleReload = () => {
+            if (auth) {
+                navigate('/HomePage')
+            } else {
+                navigate("/register")
+            }
+        }
+
+        handleReload()
+    }, [auth]) */
 
     const handleStart = () => {
         if (auth) {
@@ -46,19 +58,8 @@ function Navbar() {
     };
 
     const handleLogout = async () => {
-        try {
-            const response = await axios.post(Config.LogoutUrl)
-            if (response) {
-                setAuth(false)
-                navigate("/");
-
-            } else {
-                setError("Falied To Logout, Try Again")
-                console.log(error)
-            }
-        } catch (error) {
-            console.log(error)
-        }
+       const res = await logout();
+       if(res) navigate("/login")
 
     };
 

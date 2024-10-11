@@ -1,22 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useForm } from "react-hook-form";
 import axios from "axios";
 import { Config } from '../../API/Config';
-import { useGoogleLogin } from "@react-oauth/google"
-import { useContext } from 'react';
+import { useGoogleLogin } from "@react-oauth/google";
 import { AuthContext } from '../Context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
+
+// Configure axios defaults
+//axios.defaults.withCredentials = true; // Enable sending cookies with requests
 
 function Signup() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const { register, handleSubmit } = useForm();
+    const { register, handleSubmit, formState: { errors: formErrors } } = useForm();
     const [errors, setErrors] = useState("");
-    const {setAuth, auth} = useContext(AuthContext);
-    const navigate = useNavigate()
+    const { setAuth, setUser } = useContext(AuthContext);
+    const navigate = useNavigate();
 
     const Submit = async (data) => {
         setErrors("");
@@ -26,23 +28,35 @@ function Signup() {
                 return;
             }
 
+            if (!data.agreeToTerms) {
+                setErrors("Please agree to the Terms and Privacy Policy");
+                return;
+            }
+
             setIsLoading(true);
-            const response = await axios.post(Config.SignUPUrl, {
-                username: data.userName,
-                email: data.email,
-                password: data.password
-            });
+            const response = await axios.post(Config.SignUPUrl,
+                {
+                    username: data.userName,
+                    email: data.email,
+                    password: data.password
+                }
+                
+            );
 
             if (response.data) {
-                // Handle successful signup
-                console.log("Signup successful:", response.data);
-                setAuth(true)
-                navigate("/HomePage")
-                
-                // Redirect or show success message
+                // Store user data from response
+                setUser({
+                    id: response.data._id,
+                    email: response.data.email,
+                    username: response.data.username,
+                    profilePhoto: response.data.profilePhoto
+                });
+
+                setAuth(true);
+                navigate("/HomePage");
             }
         } catch (error) {
-            setErrors(error.response?.data?.message || error.message);
+            setErrors(error.response?.data?.message || "Signup failed. Please try again.");
         } finally {
             setIsLoading(false);
         }
@@ -51,7 +65,6 @@ function Signup() {
     const handleGoogleSuccess = async (tokenResponse) => {
         try {
             setIsLoading(true);
-            // Get user info from Google
             const userInfoResponse = await axios.get(
                 'https://www.googleapis.com/oauth2/v3/userinfo',
                 {
@@ -63,24 +76,31 @@ function Signup() {
 
             const googleUser = userInfoResponse.data;
 
-            // Send the Google user data to your backend
-            const response = await axios.post(Config.GoogleSignUpUrl, {
-                email: googleUser.email,
-                googleId: googleUser.sub,
-                name: googleUser.name,
-                picture: googleUser.picture
-            });
+            const response = await axios.post(
+                Config.GoogleSignUpUrl,
+                {
+                    email: googleUser.email,
+                    googleId: googleUser.sub,
+                    name: googleUser.name,
+                    picture: googleUser.picture
+                }
+                
+            );
 
             if (response.data) {
-                // Handle successful Google signup
-                console.log("Google signup successful:", response.data);
-                setAuth(true)
-                navigate("/HomePage")
-                // Store the token, redirect, etc.
+                // Store user data from response
+                setUser({
+                    id: response.data._id,
+                    email: response.data.email,
+                    username: response.data.username,
+                    profilePhoto: response.data.profilePhoto || googleUser.picture
+                });
+
+                setAuth(true);
+                navigate("/HomePage");
             }
         } catch (error) {
-            setErrors("Google signup failed: " + (error.response?.data?.message || error.message));
-            console.error("Google signup error:", error);
+            setErrors("Google signup failed: " + (error.response?.data?.message || "Please try again"));
         } finally {
             setIsLoading(false);
         }
@@ -92,7 +112,7 @@ function Signup() {
             console.error("Google login error:", error);
             setErrors("Google signup failed. Please try again.");
         },
-        scope: "email profile",
+        scope: "email profile"
     });
 
     return (
@@ -236,6 +256,9 @@ function Signup() {
                             id="agreeToTerms"
                             name="agreeToTerms"
                             className="mt-1 rounded border-gray-300 text-black focus:ring-black"
+                            {...register("agreeToTerms", {
+                                required: "You must agree to the Terms and Privacy Policy"
+                            })}
                         />
                         <label htmlFor="agreeToTerms" className="text-sm text-gray-600">
                             I agree to the{' '}

@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom"
+import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom"
 import './App.css'
 import Home from './Components/Home/Home'
 import Login from './Components/Login'
@@ -10,8 +10,13 @@ import Map from "./Components/Map"
 import Reviews from "./Components/Reviews"
 import Profile from "./Components/Profile"
 import Settings from "./Components/Settings"
+import { useContext, useEffect } from "react"
+import { AuthContext } from "./Context/AuthContext"
 
 function App() {
+  const { auth } = useContext(AuthContext)
+
+
   return (
     <BrowserRouter>
       <div className="flex flex-col min-h-screen">
@@ -22,33 +27,33 @@ function App() {
             <Route path='/login' element={<Login />} />
             <Route path='/register' element={<Signup />} />
             <Route path='/HomePage'
-              element={<AfterLogin/>}
-              /* {
+              element=
+              {
                 <ProtectedRoute>
                   <AfterLogin />
                 </ProtectedRoute>
-              } */
+              }
             />
-            <Route path="/map" element={<Map/>}  /* {
+            <Route path="/map" element={
               <ProtectedRoute>
                 <Map />
               </ProtectedRoute>
-            } */ />
-            <Route path="/reviews" element={<Reviews/>}  /* {
+            } />
+            <Route path="/reviews" element={
               <ProtectedRoute>
                 <Reviews />
               </ProtectedRoute>
-            } */ />
-            <Route path="/profile" element={<Profile/>}  /* {
+            } />
+            <Route path="/profile" element={
               <ProtectedRoute>
-                <Reviews />
+                <Profile />
               </ProtectedRoute>
-            } */ />
-             <Route path="/settings" element={<Settings />}  /* {
+            } />
+            <Route path="/settings" element={
               <ProtectedRoute>
                 <Settings />
               </ProtectedRoute>
-            } */ />
+            } />
           </Routes>
         </main>
       </div>

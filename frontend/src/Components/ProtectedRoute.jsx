@@ -1,15 +1,21 @@
-import { useContext } from 'react';
-import { Navigate } from 'react-router-dom';
+import { useContext, useEffect } from 'react';
+
 import { AuthContext } from '../Context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const ProtectedRoute = ({ children }) => {
-   const {auth} = useContext(AuthContext)
+    const { auth, loading } = useContext(AuthContext);
+    const navigate = useNavigate();
     
-    if (!auth) {
-        return <Navigate to="/login" replace />;
-    }
+    useEffect(() => {
+        if (!loading && !auth) {
+            navigate('/login');
+        }
+    }, [auth, loading, navigate]);
 
-    return children;
+    if (loading) return <div>Loading...</div>;
+    
+    return auth ? children : null;
 };
 
 export default ProtectedRoute;

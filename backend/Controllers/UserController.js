@@ -150,7 +150,7 @@ const GoogleAuthController = async (req, res) => {
       email: newUser.email,
       profilephoto: newUser.profilePhoto,
       reviews: newUser.reviews,
-      contacts : newUser.contacts
+      contacts: newUser.contacts
     });
 
   } catch (error) {
@@ -161,4 +161,26 @@ const GoogleAuthController = async (req, res) => {
   }
 };
 
-export { Signup, Login, Logout, GoogleAuthController };
+const Authentication = (req, res) => {
+  const token = req.cookies.jwt;
+
+  if (!token) {
+    return res.status(401).json({ authenticated: false });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    res.json({
+      authenticated: true,
+      user: {
+        id: decoded.id,
+        email: decoded.email,
+        username: decoded.username
+      }
+    });
+  } catch (error) {
+    res.status(401).json({ authenticated: false });
+  }
+}
+
+export { Signup, Login, Logout, GoogleAuthController, Authentication };
