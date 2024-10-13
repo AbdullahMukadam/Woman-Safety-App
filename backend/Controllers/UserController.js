@@ -136,7 +136,6 @@ const GoogleAuthController = async (req, res) => {
       isGoogleUser: true,
       reviews: [],
       contacts: []
-      // Initialize empty reviews array
     });
 
     const token = CreateToken(newUser._id);

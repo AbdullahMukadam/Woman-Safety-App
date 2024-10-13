@@ -2,6 +2,8 @@ import express from "express"
 import dotenv from "dotenv"
 import cookieParser from "cookie-parser";
 import UserRoutes from "../backend/Routes/UserRoutes.js"
+import ContactRoutes from "../backend/Routes/ContactsRoutes.js"
+
 import ConnectToDb from "./Utils/ConnectDb.js";
 import cors from "cors"
 
@@ -29,6 +31,7 @@ app.use(cookieParser())
 ConnectToDb();
 
 app.use("/api/user",UserRoutes)
+app.use("/api/contacts",ContactRoutes)
 
 app.listen(process.env.PORT, ()=>{
     console.log("Server Started")

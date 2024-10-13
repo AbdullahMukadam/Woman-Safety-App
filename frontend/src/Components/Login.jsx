@@ -13,7 +13,7 @@ function Login() {
     const { register, handleSubmit } = useForm();
     const [errors, setErrors] = useState("");
     const navigate = useNavigate();
-    const {setAuth} = useContext(AuthContext)
+    const {setAuth,setUser} = useContext(AuthContext)
 
     const Submit = async (data) => {
         setErrors("");
@@ -26,6 +26,14 @@ function Login() {
             if (response) {
                 console.log(response.data);
                 setAuth(true)
+                setUser({
+                    id: response.data._id,
+                    email: response.data.email,
+                    username: response.data.username,
+                    profilePhoto: response.data.profilePhoto,
+                    reviews : response.data.reviews,
+                    contacts : response.data.contacts
+                })
                 navigate("/HomePage")
             }
         } catch (error) {
@@ -63,6 +71,14 @@ function Login() {
             if (response.data) {
                 console.log(response.data);
                 setAuth(true)
+                setUser({
+                    id: response.data._id,
+                    email: response.data.email,
+                    username: response.data.username,
+                    profilePhoto: response.data.profilePhoto || googleUser.picture,
+                    reviews : response.data.reviews,
+                    contacts : response.data.contacts 
+                })
                 navigate("/HomePage")
                 
             }

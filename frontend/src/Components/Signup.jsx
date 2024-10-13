@@ -49,7 +49,9 @@ function Signup() {
                     id: response.data._id,
                     email: response.data.email,
                     username: response.data.username,
-                    profilePhoto: response.data.profilePhoto
+                    profilePhoto: response.data.profilePhoto,
+                    reviews : response.data.reviews,
+                    contacts : response.data.contacts
                 });
 
                 setAuth(true);
@@ -93,7 +95,9 @@ function Signup() {
                     id: response.data._id,
                     email: response.data.email,
                     username: response.data.username,
-                    profilePhoto: response.data.profilePhoto || googleUser.picture
+                    profilePhoto: response.data.profilePhoto || googleUser.picture,
+                    reviews : response.data.reviews,
+                    contacts : response.data.contacts 
                 });
 
                 setAuth(true);
