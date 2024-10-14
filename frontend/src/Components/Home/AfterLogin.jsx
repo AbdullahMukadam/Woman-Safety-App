@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import SOSButton from '../SOSButton'
 import { Plus, X } from 'lucide-react'
 import BottomNav from './BottomNav'
@@ -10,10 +10,15 @@ import { Config } from '../../../API/Config'
 function AfterLogin() {
   const [showAddContact, setShowAddContact] = useState(false);
   const { handleSubmit, register } = useForm();
-  const { user } = useContext(AuthContext)
+  const { user, setUser } = useContext(AuthContext);
+  const [contactsdata, setContactsdata] = useState([]);
+
+  useEffect(() => {
+    setContactsdata(Array.isArray(user.contacts) ? user.contacts : []);
+  }, [user]);
 
   const Submit = async (data) => {
-    //console.log(data, user)
+
     const response = await axios.post(Config.ContactUrl, {
       photo: data.photo[0],
       name: data.name,
@@ -21,7 +26,14 @@ function AfterLogin() {
       userId: user.id
     })
     if (response) {
-      console.log(response)
+      console.log(response.data)
+      const data = response.data.contact
+      setUser((prevUser) => ({
+        ...prevUser,
+        contacts: [...(prevUser.contacts || []), data]
+      }));
+      setShowAddContact(false)
+      console.log(user)
     }
   }
 
@@ -35,43 +47,25 @@ function AfterLogin() {
 
         <div className='w-full flex flex-col gap-3 mt-4 md:flex-row md:flex-wrap md:justify-center md:items-center'>
           {/* Contact Card 1 */}
-          <div className='w-full p-4 rounded-lg bg-white shadow-sm hover:shadow-md transition-all border border-gray-100 flex items-center gap-4 md:w-[30%]'>
-            <img
-              className='w-16 h-16 rounded-full object-cover'
-              src="/img1.png"
-              alt="Contact"
-            />
-            <div className='flex flex-col justify-center'>
-              <h2 className='text-gray-700 font-bold text-lg'>Abdullah</h2>
-              <h3 className='text-gray-500 font-medium'>87692081538</h3>
+          
+          {contactsdata?.map((contact, index) => (
+            <div key={index} className='w-full p-4 rounded-lg bg-white shadow-sm hover:shadow-md transition-all border border-gray-100 flex items-center gap-4 md:w-[30%]'>
+              <img
+                className='w-16 h-16 rounded-full object-cover'
+                src={contact.photo}
+                alt="Contact"
+              />
+              <div className='flex flex-col justify-center'>
+                <h2 className='text-gray-700 font-bold text-lg'>{contact.name}</h2>
+                <h3 className='text-gray-500 font-medium'>{contact.MobileNo
+                }</h3>
+              </div>
             </div>
-          </div>
+          ))}
+          {!contactsdata && <h1 className='text-gray-700 font-bold text-lg'>No Contacts Found</h1> }
 
-          {/* Contact Card 2 */}
-          <div className='w-full p-4 rounded-lg bg-white shadow-sm hover:shadow-md transition-all border border-gray-100 flex items-center gap-4 md:w-[30%]'>
-            <img
-              className='w-16 h-16 rounded-full object-cover'
-              src="/img1.png"
-              alt="Contact"
-            />
-            <div className='flex flex-col justify-center'>
-              <h2 className='text-gray-700 font-bold text-lg'>Abdullah</h2>
-              <h3 className='text-gray-500 font-medium'>87692081538</h3>
-            </div>
-          </div>
 
-          {/* Contact Card 3 */}
-          <div className='w-full p-4 rounded-lg bg-white shadow-sm hover:shadow-md transition-all border border-gray-100 flex items-center gap-4 md:w-[30%]'>
-            <img
-              className='w-16 h-16 rounded-full object-cover'
-              src="/img1.png"
-              alt="Contact"
-            />
-            <div className='flex flex-col justify-center'>
-              <h2 className='text-gray-700 font-bold text-lg'>Abdullah</h2>
-              <h3 className='text-gray-500 font-medium'>87692081538</h3>
-            </div>
-          </div>
+
         </div>
       </div>
 
