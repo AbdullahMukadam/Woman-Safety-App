@@ -2,37 +2,63 @@ import { useEffect, useState } from "react";
 import { AuthContext, AuthProvider } from "./AuthContext";
 import { Config } from "../../API/Config";
 import axios from "axios";
+import api from "../../API/CustomApi";
 
 
 const UserContextProvider = ({ children }) => {
     const [auth, setAuth] = useState(false);
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [userEmail, setUserEmail] = useState("")
+
+    const getUserInfo = async () => {
+        try {
+            const response = await api.get(Config.GETDATAUrl, {
+                email: userEmail
+            })
+            if (response) {
+                localStorage.setItem("UserInfo", response.data)
+                setUser({
+                    id: response.data._id,
+                    email: response.data.email,
+                    username: response.data.username,
+                    profilePhoto: response.data.profilePhoto,
+                    reviews: response.data.reviews,
+                    contacts: response.data.contacts
+                })
+            }
+        } catch (error) {
+            console.error("Error in getting Data", error)
+        }
+    }
+
+
+    const checkAuth = async () => {
+        try {
+            const response = await api.get(`${Config.baseUrl}/auth-check`);
+
+            if (response.data.authenticated) {
+                setUserEmail(response.data.user.email)
+                await getUserInfo()
+                setAuth(true);                
+            }
+        } catch (error) {
+            setAuth(false);
+            setUser(null);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const checkAuth = async () => {
-            try {
-                const response = await axios.get(`${Config.baseUrl}/auth-check`);
-
-                if (response.data.authenticated) {
-                    setAuth(true);
-                    setUser(response.data.user);
-                }
-            } catch (error) {
-                setAuth(false);
-                setUser(null);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         checkAuth();
     }, []);
 
     const logout = async () => {
         try {
-            const res = await axios.post(Config.LogoutUrl);
+            const res = await api.post(Config.LogoutUrl);
             if (res) {
+                localStorage.clear();
                 setAuth(false);
                 setUser(null);
             }
@@ -43,7 +69,7 @@ const UserContextProvider = ({ children }) => {
     };
 
     return (
-        <AuthProvider value={{ auth, setAuth, user, setUser, logout, loading }}>
+        <AuthProvider value={{ auth, setAuth, user, setUser, logout, loading, checkAuth }}>
             {children}
         </AuthProvider>
     )

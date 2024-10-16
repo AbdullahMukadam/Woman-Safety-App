@@ -6,6 +6,7 @@ import { Config } from '../../API/Config';
 import { useGoogleLogin } from "@react-oauth/google";
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../Context/AuthContext';
+import api from '../../API/CustomApi';
 
 function Login() {
     const [showPassword, setShowPassword] = useState(false);
@@ -13,27 +14,18 @@ function Login() {
     const { register, handleSubmit } = useForm();
     const [errors, setErrors] = useState("");
     const navigate = useNavigate();
-    const {setAuth,setUser} = useContext(AuthContext)
+    const {setAuth,setUser, checkAuth} = useContext(AuthContext)
 
     const Submit = async (data) => {
         setErrors("");
         setIsLoading(true);
         try {
-            const response = await axios.post(Config.LOGINUrl, {
+            const response = await api.post(Config.LOGINUrl, {
                 email: data.email,
                 password: data.password
             });
             if (response) {
-                console.log(response.data);
-                setAuth(true)
-                setUser({
-                    id: response.data._id,
-                    email: response.data.email,
-                    username: response.data.username,
-                    profilePhoto: response.data.profilePhoto,
-                    reviews : response.data.reviews,
-                    contacts : response.data.contacts
-                })
+                await checkAuth()
                 navigate("/HomePage")
             }
         } catch (error) {
@@ -48,7 +40,6 @@ function Login() {
             setIsLoading(true);
             setErrors("");
 
-            // Get user info from Google
             const userInfoResponse = await axios.get(
                 'https://www.googleapis.com/oauth2/v3/userinfo',
                 {
@@ -60,8 +51,8 @@ function Login() {
 
             const googleUser = userInfoResponse.data;
 
-            // Send to your backend
-            const response = await axios.post(Config.GoogleSignUpUrl, {
+          
+            const response = await api.post(Config.GoogleSignUpUrl, {
                 email: googleUser.email,
                 name: googleUser.name,
                 googleId: googleUser.sub,
@@ -69,16 +60,7 @@ function Login() {
             });
 
             if (response.data) {
-                console.log(response.data);
-                setAuth(true)
-                setUser({
-                    id: response.data._id,
-                    email: response.data.email,
-                    username: response.data.username,
-                    profilePhoto: response.data.profilePhoto || googleUser.picture,
-                    reviews : response.data.reviews,
-                    contacts : response.data.contacts 
-                })
+                await checkAuth()
                 navigate("/HomePage")
                 
             }

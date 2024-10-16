@@ -2,6 +2,7 @@ import User from "../Models/UserModel.js";
 import bcrypt from "bcryptjs";
 import CreateToken from "../Utils/CreateToken.js";
 import { OAuth2Client } from 'google-auth-library';
+import User from "../Models/UserModel.js";
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -182,4 +183,29 @@ const Authentication = (req, res) => {
   }
 }
 
-export { Signup, Login, Logout, GoogleAuthController, Authentication };
+const GetUserInfo = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(401).json({ message: "No User Found" });
+  }
+
+  try {
+    const UserEmail = await User.findOne({ email })
+    if (UserEmail) {
+      res.status(200).json({
+        _id: UserEmail._id,
+        email: UserEmail.email,
+        username: UserEmail.username,
+        profilePhoto: UserEmail.profilePhoto,
+        reviews: UserEmail.reviews,
+        contacts: UserEmail.contacts
+      })
+    }
+  } catch (error) {
+    res.status(500).json({ message: "An error occurred during getting Data" });
+  }
+
+}
+
+export { Signup, Login, Logout, GoogleAuthController, Authentication, GetUserInfo };
