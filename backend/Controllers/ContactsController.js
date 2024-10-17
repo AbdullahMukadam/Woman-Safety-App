@@ -5,7 +5,7 @@ import fs from "fs"
 const AddContact = async (req, res) => {
     const {  MobileNo, name, userId } = req.body;
     const userID = userId
-    let photo = "../Utils/woman.webp"
+    let photo ;
 
     if ( !MobileNo || !name) {
         return res.status(400).json({ message: "Please enter all the fields" });

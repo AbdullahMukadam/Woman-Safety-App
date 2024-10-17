@@ -1,8 +1,16 @@
-import express from "express"
-import { AddContact } from "../Controllers/ContactsController.js"
-import { upload } from "../Middlewares/Multer.js"
-const router = express.Router()
+import express from "express";
+import { AddContact } from "../Controllers/ContactsController.js";
+import { upload } from "../Middlewares/Multer.js";
 
-router.post("/addcontact",upload.single("photo"),AddContact)
+const router = express.Router();
 
-export default router
+
+router.post("/addcontact", upload.single("photo"), async (req, res, next) => {
+  try {
+    await AddContact(req, res);
+  } catch (error) {
+    next(error); 
+  }
+});
+
+export default router;

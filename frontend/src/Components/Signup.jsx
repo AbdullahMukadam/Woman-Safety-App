@@ -6,9 +6,9 @@ import { Config } from '../../API/Config';
 import { useGoogleLogin } from "@react-oauth/google";
 import { AuthContext } from '../Context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
+import api from '../../API/CustomApi';
 
-// Configure axios defaults
-//axios.defaults.withCredentials = true; // Enable sending cookies with requests
+
 
 function Signup() {
     const [showPassword, setShowPassword] = useState(false);
@@ -17,7 +17,7 @@ function Signup() {
     const [isLoading, setIsLoading] = useState(false);
     const { register, handleSubmit, formState: { errors: formErrors } } = useForm();
     const [errors, setErrors] = useState("");
-    const { setAuth, setUser } = useContext(AuthContext);
+    const { setAuth, setUser, checkAuth } = useContext(AuthContext);
     const navigate = useNavigate();
 
     const Submit = async (data) => {
@@ -34,27 +34,17 @@ function Signup() {
             }
 
             setIsLoading(true);
-            const response = await axios.post(Config.SignUPUrl,
+            const response = await api.post(Config.SignUPUrl,
                 {
                     username: data.userName,
                     email: data.email,
                     password: data.password
                 }
-                
+
             );
 
             if (response.data) {
-                // Store user data from response
-                setUser({
-                    id: response.data._id,
-                    email: response.data.email,
-                    username: response.data.username,
-                    profilePhoto: response.data.profilePhoto,
-                    reviews : response.data.reviews,
-                    contacts : response.data.contacts
-                });
-
-                setAuth(true);
+                await checkAuth()
                 navigate("/HomePage");
             }
         } catch (error) {
@@ -78,7 +68,7 @@ function Signup() {
 
             const googleUser = userInfoResponse.data;
 
-            const response = await axios.post(
+            const response = await api.post(
                 Config.GoogleSignUpUrl,
                 {
                     email: googleUser.email,
@@ -86,21 +76,11 @@ function Signup() {
                     name: googleUser.name,
                     picture: googleUser.picture
                 }
-                
+
             );
 
             if (response.data) {
-                // Store user data from response
-                setUser({
-                    id: response.data._id,
-                    email: response.data.email,
-                    username: response.data.username,
-                    profilePhoto: response.data.profilePhoto || googleUser.picture,
-                    reviews : response.data.reviews,
-                    contacts : response.data.contacts 
-                });
-
-                setAuth(true);
+                await checkAuth()
                 navigate("/HomePage");
             }
         } catch (error) {
@@ -115,8 +95,7 @@ function Signup() {
         onError: (error) => {
             console.error("Google login error:", error);
             setErrors("Google signup failed. Please try again.");
-        },
-        scope: "email profile"
+        }
     });
 
     return (

@@ -2,7 +2,7 @@ import User from "../Models/UserModel.js";
 import bcrypt from "bcryptjs";
 import CreateToken from "../Utils/CreateToken.js";
 import { OAuth2Client } from 'google-auth-library';
-import User from "../Models/UserModel.js";
+import jwt from "jsonwebtoken";
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -31,8 +31,8 @@ const Signup = async (req, res) => {
     if (NewUser) {
       await NewUser.save();
 
-      const Token = CreateToken(NewUser._id);
-      res.cookie("jwt", Token, {
+      const token = CreateToken(NewUser._id);
+      res.cookie("jwt", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         maxAge: 30 * 24 * 60 * 60 * 1000,
@@ -161,51 +161,72 @@ const GoogleAuthController = async (req, res) => {
   }
 };
 
-const Authentication = (req, res) => {
-  const token = req.cookies.jwt;
-
-  if (!token) {
-    return res.status(401).json({ authenticated: false });
-  }
-
+const Authentication = async (req, res) => {
   try {
+    const token = req.cookies.jwt; 
+
+    if (!token) {
+      return res.status(401).json({ authenticated: false, message: 'Token missing!' });
+    }
+
+    
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    res.json({
+
+    const userData = await User.findById(decoded.id);
+    if (!userData) {
+      return res.status(404).json({ authenticated: false, message: 'User not found!' });
+    }
+
+    //console.log("Authenticated User:", userData);
+
+    
+    return res.status(200).json({
       authenticated: true,
       user: {
-        id: decoded.id,
-        email: decoded.email,
-        username: decoded.username
-      }
+        id: userData._id,
+        email: userData.email,
+      },
     });
+
   } catch (error) {
-    res.status(401).json({ authenticated: false });
+    console.error('Authentication error:', error.message);
+
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+      return res.status(401).json({ authenticated: false, message: 'Invalid or expired token!' });
+    }
+
+    return res.status(500).json({ authenticated: false, message: 'Server error!' });
   }
-}
+};
 
 const GetUserInfo = async (req, res) => {
-  const { email } = req.body;
+  const { email } = req.query; 
 
   if (!email) {
-    return res.status(401).json({ message: "No User Found" });
+    return res.status(400).json({ message: "Email is required" }); 
   }
 
   try {
-    const UserEmail = await User.findOne({ email })
-    if (UserEmail) {
-      res.status(200).json({
-        _id: UserEmail._id,
-        email: UserEmail.email,
-        username: UserEmail.username,
-        profilePhoto: UserEmail.profilePhoto,
-        reviews: UserEmail.reviews,
-        contacts: UserEmail.contacts
-      })
-    }
-  } catch (error) {
-    res.status(500).json({ message: "An error occurred during getting Data" });
-  }
+    const user = await User.findOne({ email });
 
-}
+    if (!user) {
+      return res.status(404).json({ message: "No User Found" }); 
+    }
+
+    res.status(200).json({
+      _id: user._id,
+      email: user.email,
+      username: user.username,
+      profilePhoto: user.profilePhoto,
+      reviews: user.reviews,
+      contacts: user.contacts,
+    });
+  } catch (error) {
+    console.error("Error fetching user data:", error); // Log error for debugging
+    res.status(500).json({ message: "An error occurred during data retrieval" });
+  }
+};
+
+
 
 export { Signup, Login, Logout, GoogleAuthController, Authentication, GetUserInfo };

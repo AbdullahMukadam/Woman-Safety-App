@@ -71,9 +71,9 @@ function Navbar() {
                 </div>
 
                 <div className='hidden w-[30%] p-2 md:flex items-center gap-8'>
-                    {Data.map((item) => (
+                    {Data.map((item, index) => (
                         item.status ? (
-                            <a className='text-gray-400 font-mono font-bold hover:text-black transition-colors duration-300' href={item.url}>{item.name}</a>
+                            <a key={index} className='text-gray-400 font-mono font-bold hover:text-black transition-colors duration-300' href={item.url}>{item.name}</a>
                         ) : null
 
                     ))}
@@ -116,9 +116,9 @@ function Navbar() {
             <div className={`absolute w-full bg-white shadow-lg md:hidden transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'
                 }`}>
                 <div className='flex flex-col space-y-4 p-4'>
-                    {Data.map((item) => (
+                    {Data.map((item, index) => (
                         item.status ? (
-                            <a className='text-gray-400 font-mono font-bold hover:text-black transition-colors duration-300 z-50' href={item.url}>{item.name}</a>
+                            <a key={index} className='text-gray-400 font-mono font-bold hover:text-black transition-colors duration-300 z-50' href={item.url}>{item.name}</a>
                         ) : null
                     ))}
 
