@@ -20,13 +20,22 @@ function AfterLogin() {
 
   const Submit = async (formData) => {
     try {
+      console.log(formData);
+
+
+      const contactData = new FormData();
+      contactData.append('photo', formData.photo[0]);
+      contactData.append('name', formData.name);
+      contactData.append('MobileNo', formData.MobileNo);
+      contactData.append('userId', user._id);
+
       const { data: responseData } = await api.post(
         Config.ContactUrl,
+        contactData,
         {
-          photo: formData.photo[0],
-          name: formData.name,
-          MobileNo: formData.MobileNo,
-          userId: user._id,
+          headers: {
+            'Content-Type': 'multipart/form-data', // Important for file upload
+          },
         }
       );
 
@@ -42,6 +51,7 @@ function AfterLogin() {
       console.error('Error adding contact:', error);
     }
   };
+
 
   return (
     <div className="w-full p-2 bg-slate-50">
@@ -103,6 +113,7 @@ function AfterLogin() {
                   <label className="block text-sm font-medium">Profile Photo</label>
                   <input
                     type="file"
+                    accept='image/png, image/jpg, image/jpeg, image/webp'
                     className="block w-full px-3 py-2 border rounded-lg"
                     {...register('photo', { required: true })}
                   />

@@ -37,4 +37,5 @@ app.use((err, req, res, next) => {
 
 app.listen(process.env.PORT, () => {
   console.log("Server Started")
+  //console.log( process.env.CLOUDINARY_CLOUD_NAME,process.env.CLOUDINARY_API_KEY, process.env.CLOUDINARY_SECRET)
 })

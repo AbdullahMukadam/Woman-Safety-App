@@ -94,18 +94,18 @@ const GoogleAuthController = async (req, res) => {
   try {
     const { email, name, googleId, picture } = req.body;
 
-    // Check if user already exists
+   
     let existingUser = await User.findOne({ email });
 
     if (existingUser) {
-      // If user exists but it's not a Google user, prevent login
+      
       if (!existingUser.isGoogleUser) {
         return res.status(400).json({
           message: "This email is already registered with a different login method"
         });
       }
 
-      // Update existing Google user's information
+      
       existingUser.googleId = googleId;
       if (picture) {
         existingUser.profilePhoto = picture;
@@ -128,12 +128,12 @@ const GoogleAuthController = async (req, res) => {
       });
     }
 
-    // Create new user if doesn't exist
+    
     const newUser = await User.create({
       username: name,
       email,
       googleId,
-      profilePhoto: picture || "../Utils/woman.webp", // Use default if no picture
+      profilePhoto: picture || "../Utils/woman.webp", 
       isGoogleUser: true,
       reviews: [],
       contacts: []

@@ -1,55 +1,59 @@
 import User from "../Models/UserModel.js";
 import { cloudinaryUpload } from "../Utils/Cloudinary.js";
-import fs from "fs"
+import fs from "fs";
 
 const AddContact = async (req, res) => {
-    const {  MobileNo, name, userId } = req.body;
-    const userID = userId
-    let photo ;
+  const { MobileNo, name, userId } = req.body;
 
-    if ( !MobileNo || !name) {
-        return res.status(400).json({ message: "Please enter all the fields" });
+  if (!MobileNo || !name || !userId) {
+    return res.status(400).json({ message: "Please enter all the fields" });
+  }
+
+  let photo;
+
+  try {
+    
+    if (req.file) {
+      console.log("Received file:", req.file);
+
+     
+      photo = await cloudinaryUpload(req.file.path);
+      console.log("Uploaded photo URL:", photo);
+
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.error("Error deleting local file:", err);
+      });
+    } else {
+      console.warn("No file provided, using default photo.");
+      photo = "https://via.placeholder.com/150"; 
     }
 
-    if(req.file){
-        console.log(req.file);
-        const uploadResponse = await cloudinaryUpload(req.file.path);
-        photo = uploadResponse;
+    
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        $push: {
+          contacts: { user: userId, photo, name, MobileNo },
+        },
+      },
+      { new: true }
+    );
 
-        fs.unlink(req.file.path, (err) => {
-            if (err) console.error('Error deleting local file:', err);
-          });
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
     }
 
-    try {
+    const newContact = updatedUser.contacts[updatedUser.contacts.length - 1];
 
-        const updatedUser = await User.findByIdAndUpdate(userID, {
-            $push: {
-                contacts: {
-                    user: userID,
-                    photo,
-                    name,
-                    MobileNo
-                }
-            }
-        }, {
-            new: true,
-        })
-        if (!updatedUser) {
-            return res.status(404).json({ message: "User not found" });
-        }
+    res.status(201).json({
+      message: "Contact added successfully",
+      contact: newContact,
+    });
 
-        const newContact = updatedUser.contacts[updatedUser.contacts.length - 1];
+  } catch (error) {
+    console.error("Error in AddContact:", error);
+    res.status(500).json({ message: "An error occurred in Adding Contact" });
+  }
+};
 
-        res.status(201).json({
-            message: "Contact added successfully",
-            contact: newContact
-        });
-        
-    } catch (error) {
-        return res.status(500).json({ message: "An Error occured in Adding Contact" })
-    }
-
-}
-
-export { AddContact }
+export { AddContact };

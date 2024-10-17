@@ -1,26 +1,24 @@
 import { v2 as cloudinary } from 'cloudinary';
+import dotenv from "dotenv"
 
-// Configure Cloudinary at the top level (to avoid redundant calls)
+dotenv.config();
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_SECRET,
 });
 
-async function cloudinaryUpload(fileUrl) {
+
+async function cloudinaryUpload(filePath) {
   try {
-    // Upload the file to Cloudinary
-    const uploadResult = await cloudinary.uploader.upload(fileUrl, {
-      folder: "Contactimages", // Save images in a specific folder
-      resource_type: "image",  // Ensure only images are uploaded
+    const result = await cloudinary.uploader.upload(filePath, {
+      folder: "ContactImages",
     });
-
-    console.log("Upload successful:", uploadResult);
-    return uploadResult.secure_url; // Return the optimized URL
-
+    return result.secure_url;
   } catch (error) {
-    console.error("Cloudinary upload failed:", error);
-    throw new Error("Image upload failed. Please try again.");
+    console.error("Cloudinary upload error:", error);
+    throw error; 
   }
 }
 
