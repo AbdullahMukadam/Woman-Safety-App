@@ -1,5 +1,5 @@
 import express from "express";
-import { AddContact } from "../Controllers/ContactsController.js";
+import { AddContact, DeleteContact } from "../Controllers/ContactsController.js";
 import { upload } from "../Middlewares/Multer.js";
 
 const router = express.Router();
@@ -12,5 +12,6 @@ router.post("/addcontact", upload.single("photo"), async (req, res, next) => {
     next(error); 
   }
 });
+router.delete("/delete-contact", DeleteContact)
 
 export default router;

@@ -12,11 +12,11 @@ const AddContact = async (req, res) => {
   let photo;
 
   try {
-    
+
     if (req.file) {
       console.log("Received file:", req.file);
 
-     
+
       photo = await cloudinaryUpload(req.file.path);
       console.log("Uploaded photo URL:", photo);
 
@@ -25,10 +25,10 @@ const AddContact = async (req, res) => {
       });
     } else {
       console.warn("No file provided, using default photo.");
-      photo = "https://via.placeholder.com/150"; 
+      photo = "https://via.placeholder.com/150";
     }
 
-    
+
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       {
@@ -56,4 +56,31 @@ const AddContact = async (req, res) => {
   }
 };
 
-export { AddContact };
+const DeleteContact = async (req, res) => {
+  const { userId, contactId } = req.query;
+
+  if (!userId || !contactId) {
+    return res.status(400).json({ message: "User ID and Contact ID are required" });
+  }
+
+  try {
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $pull: { contacts: { _id: contactId } } },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ message: "Contact deleted successfully", user: updatedUser });
+  } catch (error) {
+    console.error("Error deleting contact:", error);
+    res.status(500).json({ message: "An error occurred while deleting the contact" });
+  }
+};
+
+
+
+export { AddContact, DeleteContact };

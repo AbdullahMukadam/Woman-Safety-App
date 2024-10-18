@@ -55,8 +55,8 @@ const Login = async (req, res) => {
 
   const exitsEmail = await User.findOne({ email });
 
-  if (!exitsEmail) {
-    return res.status(401).json({ message: "No User Found" });
+  if (!exitsEmail || exitsEmail.isGoogleUser) {
+    return res.status(401).json({ message: `${!exitsEmail ? "No User Found" : "This email is already registered with a different login method" }` });
   } else {
     const comparePassword = await bcrypt.compare(password, exitsEmail.password);
     if (comparePassword) {

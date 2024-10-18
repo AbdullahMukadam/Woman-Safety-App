@@ -19,6 +19,7 @@ function Login() {
     const Submit = async (data) => {
         setErrors("");
         setIsLoading(true);
+        console.log(data)
         try {
             const response = await api.post(Config.LOGINUrl, {
                 email: data.email,
