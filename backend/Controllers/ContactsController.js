@@ -1,6 +1,8 @@
 import User from "../Models/UserModel.js";
 import { cloudinaryUpload } from "../Utils/Cloudinary.js";
 import fs from "fs";
+import getPublicIdFromUrl from "../Utils/getPublicIdFromUrl.js";
+import { v2 as cloudinary } from "cloudinary";
 
 const AddContact = async (req, res) => {
   const { MobileNo, name, userId } = req.body;
@@ -64,6 +66,27 @@ const DeleteContact = async (req, res) => {
   }
 
   try {
+
+    const user = await User.findById(userId)
+
+    const ContactToDelete = await user.contacts.find((contact) => contact._id.toString() === contactId)
+
+    if (!ContactToDelete) {
+      return res.status(404).json({ message: "Contact not found" });
+    }
+
+    if (ContactToDelete.photo) {
+      try {
+
+        const publicId = getPublicIdFromUrl(ContactToDelete.photo);
+       const status = await cloudinary.uploader.destroy(publicId);
+       console.log("deleted Successfully", status)
+      } catch (cloudinaryError) {
+        console.error("Error deleting image from Cloudinary:", cloudinaryError);
+
+      }
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       { $pull: { contacts: { _id: contactId } } },
