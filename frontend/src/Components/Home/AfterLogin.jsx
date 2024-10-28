@@ -7,6 +7,7 @@ import { AuthContext } from '../../Context/AuthContext';
 import api from '../../../API/CustomApi';
 import { Config } from '../../../API/Config';
 import Loader from './Loader';
+import axios from 'axios';
 
 function AfterLogin() {
   const [showAddContact, setShowAddContact] = useState(false);
@@ -14,13 +15,15 @@ function AfterLogin() {
   const { user, setUser } = useContext(AuthContext);
   const [contactsdata, setContactsdata] = useState([]);
   const [showLoader, setShowLoader] = useState(false);
+  const [MobileNo, setMobileNo] = useState([])
 
   useEffect(() => {
     setContactsdata(Array.isArray(user?.contacts) ? user.contacts : []);
+    setMobileNo(Array.isArray(user?.contacts) ? user.contacts : [])
   }, [user]);
 
   const Submit = async (formData) => {
-    setShowLoader(true); // Show loader before request
+    setShowLoader(true);
     try {
       const contactData = new FormData();
       contactData.append('photo', formData.photo[0]);
@@ -69,11 +72,176 @@ function AfterLogin() {
     }
   };
 
+  const checkLocationSupport = () => {
+    if (!navigator.geolocation) {
+      console.error('Geolocation is not supported by this browser');
+      return false;
+    }
+    return true;
+  };
+
+  const handleSOS = async () => {
+    if (!checkLocationSupport()) {
+      alert('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setShowLoader(true);
+    try {
+      // First check if we're in a secure context
+      if (!window.isSecureContext && window.location.hostname !== 'localhost') {
+        throw new Error('Geolocation requires HTTPS or localhost');
+      }
+
+      // Check and log permission status
+      const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
+      console.log('Initial permission status:', permissionStatus.state);
+
+      // If permission is denied, show instructions
+      if (permissionStatus.state === 'denied') {
+        alert('Please enable location access in your browser settings and try again');
+        console.log('Please enable location in your browser settings:',
+          '\nChrome: Settings > Privacy and security > Site Settings > Location',
+          '\nFirefox: Settings > Privacy & Security > Permissions > Location',
+          '\nSafari: Preferences > Privacy > Location Services');
+        setShowLoader(false);
+        return;
+      }
+
+      // Get position with timeout
+      const position = await new Promise((resolve, reject) => {
+        // Set a timeout for the geolocation request
+        const timeoutId = setTimeout(() => {
+          reject(new Error('Location request timed out'));
+        }, 10000);
+
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            clearTimeout(timeoutId);
+            console.log('Position successfully received:', {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+              accuracy: position.coords.accuracy
+            });
+            resolve(position);
+          },
+          (error) => {
+            clearTimeout(timeoutId);
+            console.log('Detailed error information:', {
+              code: error.code,
+              message: error.message,
+              PERMISSION_DENIED: error.code === 1,
+              POSITION_UNAVAILABLE: error.code === 2,
+              TIMEOUT: error.code === 3
+            });
+            reject(error);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          }
+        );
+      });
+
+      const { latitude, longitude } = position.coords;
+
+      // Prepare contact numbers
+      const contactNumbers = MobileNo.map(contact => contact.MobileNo);
+
+      // Log the data being sent
+      console.log('Sending emergency data:', {
+        contactNumbers,
+        location: { latitude, longitude }
+      });
+
+      // Make API call
+      const response = await api.post(Config.EMERGENCYUrl, {
+        contactNumbers,
+        location: { latitude, longitude }
+      });
+
+      if (response.status === 200) {
+        console.log('Emergency alert sent successfully:', response.data);
+        alert('Emergency alert sent successfully');
+        console.log('SMS results:', response.data.results);
+      }
+
+    } catch (error) {
+      console.error('Full error object:', error);
+
+      let errorMessage = 'An unexpected error occurred';
+
+      if (error.code === 1) {
+        errorMessage = 'Location access was denied. Please enable location services and try again.';
+      } else if (error.code === 2) {
+        errorMessage = 'Location is currently unavailable. Please try again.';
+      } else if (error.code === 3) {
+        errorMessage = 'Location request timed out. Please try again.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      console.error('Error message:', errorMessage);
+      alert(errorMessage);
+    } finally {
+      setShowLoader(false);
+    }
+  };
+
+  const testLocation = () => {
+    let isHandled = false;  // Flag to prevent multiple callbacks
+  
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by this browser');
+      return;
+    }
+  
+    try {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          if (isHandled) return;
+          isHandled = true;
+  
+          console.log('Location test successful:', {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            timestamp: new Date(position.timestamp).toISOString()
+          });
+          alert('Location test successful! Check console for details.');
+        },
+        (error) => {
+          if (isHandled) return;
+          isHandled = true;
+  
+          console.error('Location test error:', {
+            code: error.code,
+            message: error.message,
+            timestamp: new Date().toISOString()
+          });
+          alert(`Location test failed: ${error.message}`);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0
+        }
+      );
+    } catch (e) {
+      console.error('Unexpected error during location test:', e);
+    }
+  };
+
+
   return (
     <div className="w-full p-2 bg-slate-50">
-      <div className="w-full h-[40vh] p-2 flex items-center justify-center">
+      <div className="w-full h-[40vh] p-2 flex items-center justify-center " onClick={handleSOS}>
         <SOSButton />
       </div>
+      {/* <button onClick={testLocation} className="your-button-class">
+        Test Location Access
+      </button> */}
 
       <div className="w-full p-4">
         <h1 className="text-gray-900 text-2xl font-bold">Emergency Contacts</h1>

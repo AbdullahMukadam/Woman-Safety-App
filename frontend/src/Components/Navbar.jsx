@@ -51,6 +51,11 @@ function Navbar() {
             url: "mailto:abdullahmukadam21@gmail.com",
             status: auth
         },
+        {
+            name: "Home",
+            url: "/HomePage",
+            status: auth
+        },
     ]
 
     const handleNavbar = () => {

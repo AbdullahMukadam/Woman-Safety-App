@@ -8,5 +8,7 @@
     ContactUrl: String(import.meta.env.VITE_ADDCONTACT_URL),
     GETDATAUrl : String(import.meta.env.VITE_GETDATA_URL),
     CHECKAuthUrl : String(import.meta.env.VITE_CHECKAUTH_URL),
-    DELETECONTACTUrl : String(import.meta.env.VITE_DELETECONTACT_URL)
+    DELETECONTACTUrl : String(import.meta.env.VITE_DELETECONTACT_URL),
+    EMERGENCYUrl : String(import.meta.env.VITE_EMERGENCY_URL),
+
  }
