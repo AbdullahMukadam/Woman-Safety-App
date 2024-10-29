@@ -1,63 +1,85 @@
-import React, { useState } from 'react';
-import { Search, Loader, Plus, Star, X } from 'lucide-react';
+import React, { useContext, useEffect, useState } from 'react';
+import { Search, Plus, Star, X, Trash2 } from 'lucide-react';
 import BottomNav from './Home/BottomNav';
+import { useForm } from 'react-hook-form';
+import api from '../../API/CustomApi';
+import { Config } from '../../API/Config';
+import { AuthContext } from '../Context/AuthContext';
+import Loader from './Home/Loader';
 
 function Reviews() {
     const [searchQuery, setSearchQuery] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [showAddReview, setShowAddReview] = useState(false);
-    const [newReview, setNewReview] = useState({
-        location: '',
-        title: '',
-        comment: ''
-    });
+    const { handleSubmit, register } = useForm();
+    const { user, setUser } = useContext(AuthContext);
+    const [reviews, setReviews] = useState([]);
 
-    const handleSearch = async (e) => {
-        e.preventDefault();
+    useEffect(() => {
+        const fetchReviews = async () => {
+            setIsLoading(true)
+            try {
+                const response = await api.get(Config.GETREVIEWSUrl);
+                if (response.data) {
+                    setReviews(response.data.reviews || []);
+                    setIsLoading(false)
+                }
+            } catch (error) {
+                console.error('An error occurred while fetching reviews:', error);
+                setIsLoading(false)
+            } finally {
+                setIsLoading(false)
+            }
+        };
+        fetchReviews();
+    }, []);
+
+
+    const handleSubmitReview = async (data) => {
         setIsLoading(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            const response = await api.post(Config.ADDREVIEWUrl, {
+                location: data.location,
+                title: data.title,
+                review: data.review,
+                userId: user._id,
+            });
+            if (response.status === 201) {
+                const { review: newReview } = response.data;
+                setReviews((prev) => [newReview, ...prev]);
+                setShowAddReview(false);
+            }
+        } catch (error) {
+            console.error('Error submitting review:', error);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleSubmitReview = async (e) => {
-        e.preventDefault();
-        setIsLoading(true);
-        try {
-            
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            setShowAddReview(false);
-            setNewReview({ location: '', title: '', comment: '' });
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
-    
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+    };
 
     return (
         <div className="flex flex-col h-[calc(100vh-76px)] relative">
-            {/* Main Content */}
             <div className="flex-1 overflow-y-auto p-4">
                 <div className="max-w-7xl mx-auto space-y-6">
-                    {/* Header Section */}
                     <div className="flex items-center justify-between">
                         <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                            Welcome back, <span className="text-red-500">Abdullah</span>
+                            Welcome back, <span className="text-red-500">{user.username}</span>
                         </h1>
                         <button
                             onClick={() => setShowAddReview(true)}
                             className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg
-                                     hover:bg-red-700 transition duration-150 ease-in-out gap-2"
+                                hover:bg-red-700 transition duration-150 ease-in-out gap-2"
                         >
                             <Plus className="h-5 w-5" />
                             <span className="hidden sm:inline">Add Review</span>
                         </button>
                     </div>
 
-                    {/* Search Section */}
                     <form onSubmit={handleSearch} className="relative">
                         <div className="flex gap-3">
                             <div className="flex-1 relative">
@@ -69,143 +91,138 @@ function Reviews() {
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg 
-                                             bg-white shadow-sm placeholder-gray-400
-                                             focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500
-                                             transition duration-150 ease-in-out"
+                                        bg-white shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 
+                                        focus:ring-red-500 focus:border-red-500 transition duration-150 ease-in-out"
                                     placeholder="Search reviews..."
                                 />
                             </div>
                             <button
                                 type="submit"
                                 className="inline-flex items-center px-6 py-2.5 border border-transparent 
-                                         text-sm font-medium rounded-lg shadow-sm text-white
-                                         bg-red-600 hover:bg-red-700 
-                                         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500
-                                         transition duration-150 ease-in-out
-                                         min-w-[100px] justify-center"
+                                    text-sm font-medium rounded-lg shadow-sm text-white bg-red-600 hover:bg-red-700 
+                                    transition duration-150 ease-in-out min-w-[100px] justify-center"
                             >
                                 Search
                             </button>
                         </div>
                     </form>
 
-                    {/* Content Section */}
+                    {isLoading && (
+                        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+                            <Loader />
+                        </div>
+                    )}
+
                     <div className="bg-white rounded-lg shadow-lg p-6">
-                        {isLoading ? (
-                            <div className="flex items-center justify-center h-32">
-                                <Loader className="h-8 w-8 animate-spin text-red-500" />
+                        {reviews.length > 0 ? (
+                            <div className="grid gap-6">
+                                {reviews.map((review) => (
+                                    <div
+                                        key={review._id}
+                                        className="bg-gradient-to-r from-gray-50 to-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300"
+                                    >
+                                        <div className="flex flex-col space-y-4">
+                                            <div className="flex justify-between items-center">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="bg-red-100 px-3 py-1 rounded-full">
+                                                        <span className="text-sm font-medium text-red-600">
+                                                            {review.location}
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-xs text-gray-400">
+                                                        {new Date(review.createdAt).toLocaleDateString()}
+                                                    </span>
+                                                </div>
+                                                {/* <button
+                                                    onClick={() => handleDeleteReview(review._id)}
+                                                    className="p-2 text-gray-400 hover:text-red-500 transition-colors hover:bg-red-50 rounded-full"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </button> */}
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <h3 className="font-semibold text-lg text-gray-900">
+                                                    {review.title}
+                                                </h3>
+                                                <p className="text-gray-600 leading-relaxed">
+                                                    {review.review}
+                                                </p>
+                                            </div>
+
+                                            <div className="text-sm text-gray-500">
+                                                <span className="font-medium text-gray-900">By: </span>
+                                                <span className="text-gray-800 font-bold">{review.user?.username || 'Anonymous'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         ) : (
-                            <div className="min-h-[400px]">
-                                <p className="text-gray-500">No reviews found yet.</p>
+                            <div className="min-h-[400px] flex flex-col items-center justify-center gap-4">
+                                <Star className="h-8 w-8 text-red-500" />
+                                <p className="text-gray-500 font-medium">No reviews found yet.</p>
+                                <button
+                                    onClick={() => setShowAddReview(true)}
+                                    className="text-red-500 hover:text-red-600 text-sm font-medium"
+                                >
+                                    Add your first review
+                                </button>
                             </div>
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* Add Review Modal */}
             {showAddReview && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-                        <div className="p-6 space-y-6">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-xl font-bold text-gray-900">Add New Review</h2>
+                    <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
+                        <form onSubmit={handleSubmit(handleSubmitReview)} className="p-6 space-y-6">
+                            <input
+                                type="text"
+                                {...register('location', { required: true })}
+                                placeholder="Enter location"
+                                className="block w-full px-3 py-2 border rounded-lg"
+                            />
+                            <input
+                                type="text"
+                                {...register('title', { required: true })}
+                                placeholder="Enter title"
+                                className="block w-full px-3 py-2 border rounded-lg"
+                            />
+                            <textarea
+                                {...register('review', { required: true })}
+                                rows={4}
+                                placeholder="Write your review..."
+                                className="block w-full px-3 py-2 border rounded-lg"
+                            />
+
+                            <div className="flex justify-end gap-3">
                                 <button
+                                    type="button"
                                     onClick={() => setShowAddReview(false)}
-                                    className="text-gray-400 hover:text-gray-500 transition-colors"
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white
+                                   border border-gray-300 rounded-lg hover:bg-gray-50
+                                   focus:outline-none focus:ring-2 focus:ring-red-500"
                                 >
-                                    <X className="h-6 w-6" />
+                                    Cancel
+                                </button>
+
+                                <button
+                                    type="submit"
+                                    className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+                                >
+                                    Submit Review
                                 </button>
                             </div>
-
-                            <form onSubmit={handleSubmitReview} className="space-y-6">
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-gray-700">
-                                        Location
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={newReview.location}
-                                        onChange={(e) => 
-                                            setNewReview(prev => ({ 
-                                                ...prev, 
-                                                location: e.target.value 
-                                            }))
-                                        }
-                                        className="block w-full px-3 py-2 border border-gray-300 rounded-lg
-                                                 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                                        placeholder="Enter review location"
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-gray-700">
-                                        Title
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={newReview.title}
-                                        onChange={(e) => 
-                                            setNewReview(prev => ({ 
-                                                ...prev, 
-                                                title: e.target.value 
-                                            }))
-                                        }
-                                        className="block w-full px-3 py-2 border border-gray-300 rounded-lg
-                                                 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                                        placeholder="Enter review title"
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-gray-700">
-                                        Review
-                                    </label>
-                                    <textarea
-                                        value={newReview.comment}
-                                        onChange={(e) => 
-                                            setNewReview(prev => ({ 
-                                                ...prev, 
-                                                comment: e.target.value 
-                                            }))
-                                        }
-                                        rows={4}
-                                        className="block w-full px-3 py-2 border border-gray-300 rounded-lg
-                                                 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                                        placeholder="Write your review..."
-                                    />
-                                </div>
-
-                                <div className="flex justify-end gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowAddReview(false)}
-                                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white
-                                                 border border-gray-300 rounded-lg hover:bg-gray-50
-                                                 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="px-4 py-2 text-sm font-medium text-white bg-red-600
-                                                 rounded-lg hover:bg-red-700 focus:outline-none 
-                                                 focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                                    >
-                                        Submit Review
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                        </form>
                     </div>
                 </div>
             )}
 
-            
-            <div className="w-full bg-white shadow-top">
-                <BottomNav />
-            </div>
+
+
+            <BottomNav />
         </div>
     );
 }

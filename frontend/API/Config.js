@@ -10,5 +10,7 @@
     CHECKAuthUrl : String(import.meta.env.VITE_CHECKAUTH_URL),
     DELETECONTACTUrl : String(import.meta.env.VITE_DELETECONTACT_URL),
     EMERGENCYUrl : String(import.meta.env.VITE_EMERGENCY_URL),
+    ADDREVIEWUrl : String(import.meta.env.VITE_ADDREVIEW_URL),
+    GETREVIEWSUrl : String(import.meta.env.VITE_GETALLREVIEWS_URL),
 
  }
