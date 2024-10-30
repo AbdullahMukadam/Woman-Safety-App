@@ -62,7 +62,7 @@ const UserSchema = mongoose.Schema({
     },
     profilePhoto: {
         type: String,
-        default: "../Utils/woman.webp"
+        default: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvFbJHIvlkPWSvsJ1rWRbr64ZPiCCdb1SCLg&s"
     },
     reviews: {
         type: [ReviewSchema],

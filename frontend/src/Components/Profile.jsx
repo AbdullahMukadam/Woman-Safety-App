@@ -1,6 +1,9 @@
-import { Home, Map, MessageSquare, User, Edit, LogOut, Star, Settings } from 'lucide-react'
+import { Home, Map, MessageSquare, User, Edit, LogOut, Star, Settings,Luggage } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import BottomNav from './Home/BottomNav';
+import { useContext, useEffect } from 'react';
+import { AuthContext } from '../Context/AuthContext';
+import ReviewCard from './ReviewCard';
 
 const ProfileSection = ({ title, children }) => (
   <div className="w-full bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
@@ -9,41 +12,20 @@ const ProfileSection = ({ title, children }) => (
   </div>
 )
 
-const ReviewCard = ({ location, title, review }) => (
-  <div className="p-5 border-b border-gray-100 last:border-none hover:bg-gray-50 transition-colors">
-    <div className="flex items-center flex-col justify-between gap-4 mb-3">
-      <span className="font-bold text-gray-900 text-lg">Location: {location}</span>
-      <span className="text-md text-gray-800 whitespace-nowrap">Title: {title}</span>
-    </div>
 
-    <p className="text-gray-600 leading-relaxed">
-      {review}
-    </p>
-  </div>
-)
 
 
 
 function Profile() {
   const navigate = useNavigate();
-  const reviews = [
-    {
-      location: "Near Panjiri Mohalla, Mirkarwada Ratnagiri",
-      title: "Bad Experience",
-      review: "Very helpful and responsive during the emergency situation. Highly recommended!"
-    },
-    {
-      location: "Near Panjiri Mohalla, Mirkarwada Ratnagiri",
-      title: "Bad Experience",
-      review: "Very helpful and responsive during the emergency situation. Highly recommended!"
-    },
-    {
-      location: "Near Panjiri Mohalla, Mirkarwada Ratnagiri",
-      title: "Bad Experience",
-      review: "Very helpful and responsive during the emergency situation. Highly recommended!"
-    }
-  ];
-  const handleSettings = ()=>{
+  const { user,logout } = useContext(AuthContext);
+
+  const handleLogout =async ()=>{
+    const res = await logout();
+    if(res) navigate("/login")
+  }
+ 
+  const handleSettings = () => {
     navigate("/settings")
   }
 
@@ -54,6 +36,7 @@ function Profile() {
         <div className="max-w-2xl mx-auto px-4 py-3">
           <h1 className="text-xl font-bold text-gray-900">Profile</h1>
         </div>
+        
       </div>
 
       <div className="max-w-2xl mx-auto p-4 space-y-6">
@@ -61,7 +44,7 @@ function Profile() {
         <div className="flex items-center gap-4 bg-white p-4 rounded-lg shadow-sm border border-gray-100 relative">
           <div className="relative">
             <img
-              src="/img1.png"
+              src={user.profilePhoto ? user.profilePhoto : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvFbJHIvlkPWSvsJ1rWRbr64ZPiCCdb1SCLg&s"}
               alt="Profile"
               className="w-20 h-20 rounded-full object-cover"
             />
@@ -71,25 +54,25 @@ function Profile() {
           </div>
 
           <div className="flex-1">
-            <h2 className="text-xl font-bold text-gray-900">John Doe</h2>
-            <p className="text-gray-500">john.doe@example.com</p>
+            <h2 className="text-xl font-bold text-gray-900">{user.username}</h2>
+            <p className="text-gray-500">{user.email}</p>
           </div>
           <div className='absolute top-1 right-1'>
             <button className="absolute top-0 right-0 p-1.5 rounded-full  hover:bg-red-500 transition-colors" onClick={handleSettings}>
-              <Settings className="w-5 h-5" onClick={handleSettings}/>
+              <Settings className="w-5 h-5" onClick={handleSettings} />
             </button>
           </div>
         </div>
 
         {/* Reviews Section */}
         <ProfileSection title="Recent Reviews">
-          {reviews.map((review, index) => (
-            <ReviewCard key={index} {...review} />
-          ))}
+          {user.reviews.length > 0 ? user.reviews.map((review, index) => (
+            <ReviewCard key={index} {...review} username={user.username} />
+          )) : <p>No Reviews Found</p> }
         </ProfileSection>
 
         {/* Logout Button */}
-        <button className="w-full bg-red-50 text-red-500 font-semibold py-4 rounded-lg hover:bg-red-100 transition-colors flex items-center justify-center gap-2">
+        <button className="w-full bg-red-50 text-red-500 font-semibold py-4 rounded-lg hover:bg-red-100 transition-colors flex items-center justify-center gap-2" onClick={handleLogout}>
           <LogOut className="w-5 h-5" />
           Logout
         </button>

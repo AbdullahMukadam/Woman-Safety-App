@@ -31,9 +31,9 @@ const UserContextProvider = ({ children }) => {
 
             if (response.data.authenticated) {
                 const email = response.data.user.email;
-                setUserEmail(email); // Set email first
+                setUserEmail(email); 
 
-                await getUserInfo(email); // Fetch user info after setting email
+                await getUserInfo(email); 
                 setAuth(true);
             }
         } catch (error) {
@@ -46,7 +46,7 @@ const UserContextProvider = ({ children }) => {
     };
 
     useEffect(() => {
-        checkAuth(); // Trigger auth check only once on mount
+        checkAuth(); 
     }, []);
 
     const logout = async () => {

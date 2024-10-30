@@ -14,6 +14,7 @@ function Reviews() {
     const { handleSubmit, register } = useForm();
     const { user, setUser } = useContext(AuthContext);
     const [reviews, setReviews] = useState([]);
+    const [allReviews, setAllReviews] = useState([]);
 
     useEffect(() => {
         const fetchReviews = async () => {
@@ -21,7 +22,9 @@ function Reviews() {
             try {
                 const response = await api.get(Config.GETREVIEWSUrl);
                 if (response.data) {
-                    setReviews(response.data.reviews || []);
+                    const fetchedReviews = response.data.reviews || [];
+                    setReviews(fetchedReviews);
+                    setAllReviews(fetchedReviews);
                     setIsLoading(false)
                 }
             } catch (error) {
@@ -47,6 +50,7 @@ function Reviews() {
             if (response.status === 201) {
                 const { review: newReview } = response.data;
                 setReviews((prev) => [newReview, ...prev]);
+                setAllReviews((prev) => [newReview, ...prev]);
                 setShowAddReview(false);
             }
         } catch (error) {
@@ -60,6 +64,25 @@ function Reviews() {
 
     const handleSearch = (e) => {
         e.preventDefault();
+        setIsLoading(true);
+        try {
+            if (!searchQuery.trim()) {
+                setReviews(allReviews);
+            } else {
+                
+                const filteredReviews = allReviews.filter((review) =>
+                    review.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    review.review.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    review.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    review.user?.username.toLowerCase().includes(searchQuery.toLowerCase())
+                );
+                setReviews(filteredReviews);
+            }
+        } catch (error) {
+            console.error('An error occurred during search:', error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
