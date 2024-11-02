@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import UserRoutes from "../backend/Routes/UserRoutes.js"
 import ContactRoutes from "../backend/Routes/ContactsRoutes.js"
 import ReviewRoutes from "../backend/Routes/ReviewRoutes.js"
+import ProfileRoutes from "../backend/Routes/ProfileRoutes.js"
 
 import ConnectToDb from "./Utils/ConnectDb.js";
 import cors from "cors"
@@ -32,6 +33,7 @@ ConnectToDb();
 app.use("/api/user", UserRoutes)
 app.use("/api/contacts", ContactRoutes)
 app.use("/api/reviews", ReviewRoutes)
+app.use("/api/profile",ProfileRoutes )
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: "Something went wrong!", error: err.message });
