@@ -17,7 +17,7 @@ const ProfileSection = ({ title, children }) => (
 
 function Profile() {
   const navigate = useNavigate();
-  const { user, logout } = useContext(AuthContext);
+  const { user, logout, setUser } = useContext(AuthContext);
   const [isUploading, setIsUploading] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -64,22 +64,36 @@ function Profile() {
   const onSubmit = async (data) => {
     if (!data.photo?.[0]) return;
 
-    setIsUploading(true)
+    setIsUploading(true);
     try {
-      const response = await api.post(Config.ADDPROFILEPHOTO, {
-        file: data.photo[0]
-      })
+
+      const formData = new FormData();
+      formData.append('userId', user._id);
+      formData.append('photo', data.photo[0]);
+
+
+      const response = await api.post(Config.ADDPROFILEPHOTO, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+
       if (response.status === 200) {
-        console.log(response.data)
+        console.log("Updated User:", response.data.updatedUser);
+        setUser((prevUser) => ({
+          ...prevUser,
+          profilePhoto: response.data.updatedUser.profilePhoto
+        }))
       }
     } catch (error) {
-      console.error("Failed to upload the file", error)
+      console.error("Failed to upload the file", error);
     } finally {
-      setIsUploading(false)
+      setIsUploading(false);
+      setShowPhotoModal(false);
     }
+  };
 
-
-  }
 
   const handleCloseModal = () => {
     setShowPhotoModal(false);
@@ -101,7 +115,7 @@ function Profile() {
         <div className="flex items-center gap-4 bg-white p-4 rounded-lg shadow-sm border border-gray-100 relative">
           <div className="relative">
             <img
-              src={user.profilePhoto || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvFbJHIvlkPWSvsJ1rWRbr64ZPiCCdb1SCLg&s"}
+              src={user.profilePhoto ? user.profilePhoto : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvFbJHIvlkPWSvsJ1rWRbr64ZPiCCdb1SCLg&s"}
               alt="Profile"
               className="w-20 h-20 rounded-full object-cover"
             />
