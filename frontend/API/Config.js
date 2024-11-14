@@ -12,5 +12,8 @@
     EMERGENCYUrl : String(import.meta.env.VITE_EMERGENCY_URL),
     ADDREVIEWUrl : String(import.meta.env.VITE_ADDREVIEW_URL),
     GETREVIEWSUrl : String(import.meta.env.VITE_GETALLREVIEWS_URL),
-    ADDPROFILEPHOTO : String(import.meta.env.VITE_ADDPROFILEPHOTO_URL)
+    ADDPROFILEPHOTO : String(import.meta.env.VITE_ADDPROFILEPHOTO_URL),
+    UPDATEUSERNAME : String(import.meta.env.VITE_UPDATEUSERNAME_URL),
+    UPDATEEMAIL : String(import.meta.env.VITE_UPDATEEMAIL_URL),
+    UPDATEPASSWORD : String(import.meta.env.VITE_UPDATEPASSWORD_URL)
  }

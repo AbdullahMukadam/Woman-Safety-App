@@ -1,218 +1,236 @@
-import {
-    ChevronLeft,
-    User,
-    Mail,
-    Phone,
-    Bell,
-    Lock,
-    Moon,
-    Languages,
-    HelpCircle
-} from 'lucide-react'
-import { Link } from 'react-router-dom'
-import MenuItem from './MenuItem'
-import SettingsSection from './SettingsSection'
-import ToggleItem from './ToggleItem'
-import { useState } from 'react'
-
-// API functions
-const updateUserField = async (field, value) => {
-    try {
-        const response = await fetch('/api/user/update', {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                field,
-                value
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        return { success: true, data };
-    } catch (error) {
-        console.error('Error updating user field:', error);
-        return { success: false, error: error.message };
-    }
-};
+import React, { useContext, useState } from 'react';
+import { ChevronLeft, User, Mail, Lock } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import axios from 'axios';
+import api from '../../API/CustomApi';
+import { Config } from '../../API/Config';
+import { AuthContext } from '../Context/AuthContext';
 
 function Settings() {
-    // User data state
-    const [username, setUsername] = useState("John Doe")
-    const [userEmail, setUserEmail] = useState("john.doe@example.com")
-    const [phoneNumber, setPhoneNumber] = useState("+1 234 567 8900")
-    const [language, setLanguage] = useState("English")
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const {user} = useContext(AuthContext)
 
-    // Loading states
-    const [loadingStates, setLoadingStates] = useState({
-        username: false,
-        email: false,
-        phone: false,
-        language: false
-    })
-
-    // Error states
-    const [errorStates, setErrorStates] = useState({
-        username: '',
-        email: '',
-        phone: '',
-        language: ''
-    })
-
-    // Generic handler for updating user fields
-    const handleFieldUpdate = async (field, value, localStateSetter) => {
-        // Update loading state
-        setLoadingStates(prev => ({ ...prev, [field]: true }))
-        // Clear previous error
-        setErrorStates(prev => ({ ...prev, [field]: '' }))
-
-        const { success, error } = await updateUserField(field, value)
-
-        if (success) {
-            // Update local state
-            localStateSetter(value)
-        } else {
-            // Set error state
-            setErrorStates(prev => ({ 
-                ...prev, 
-                [field]: error || 'An error occurred while updating. Please try again.'
-            }))
-            // You might want to show a toast notification here
-        }
-
-        // Clear loading state
-        setLoadingStates(prev => ({ ...prev, [field]: false }))
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset
+  } = useForm({
+    defaultValues: {
+      username: '',
+      email: '',
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
     }
+  });
 
-    return (
-        <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <div className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-10">
-                <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-                    <Link to="/profile" className="text-gray-500 hover:text-gray-700">
-                        <ChevronLeft className="w-6 h-6" />
-                    </Link>
-                    <h1 className="text-xl font-bold text-gray-900">Settings</h1>
-                </div>
-            </div>
+  const onSubmit = async (data) => {
+    setLoading(true);
+    setError('');
+    setSuccessMessage('');
+  
+    try {
+      // Update username
+      if (data.username) {
+        const response = await api.post(Config.UPDATEUSERNAME, {
+          userId: user._id,
+          username: data.username,
+        });
+  
+        if (response.data.success) {
+          setSuccessMessage('Username updated successfully');
+          reset({ username: '' });
+        }
+      }
+  
+      // Update email
+      if (data.email) {
+        const response = await api.post(Config.UPDATEEMAIL, {
+          userId: user._id,
+          email: data.email,
+          isGoogleUser: user.isGoogleUser,
+        });
+  
+        if (response.data.success) {
+          setSuccessMessage('Email updated successfully');
+          reset({ email: '' });
+        }
+      }
+  
+      // Update password
+      if (data.currentPassword && data.newPassword) {
+        if (data.newPassword !== data.confirmPassword) {
+          setError('New passwords do not match');
+          return;
+        }
+  
+        const response = await api.post(Config.UPDATEPASSWORD, {
+          userId: user._id,
+          currentPassword: data.currentPassword,
+          newPassword: data.newPassword,
+          isGoogleUser: user.isGoogleUser,
+        });
+  
+        if (response.data.success) {
+          setSuccessMessage('Password updated successfully');
+          reset({
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: '',
+          });
+        }
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            <div className="max-w-2xl mx-auto p-4 space-y-6">
-                {/* Account Settings */}
-                <SettingsSection title="Account Settings">
-                    <MenuItem
-                        icon={User}
-                        label="Username"
-                        initialValue={username}
-                        onUpdate={(value) => handleFieldUpdate('username', value, setUsername)}
-                        isLoading={loadingStates.username}
-                        error={errorStates.username}
-                    />
-                    <MenuItem
-                        icon={Mail}
-                        label="Email"
-                        initialValue={userEmail}
-                        onUpdate={(value) => handleFieldUpdate('email', value, setUserEmail)}
-                        isLoading={loadingStates.email}
-                        error={errorStates.email}
-                        validation={(value) => {
-                            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                            return emailRegex.test(value) ? '' : 'Please enter a valid email address';
-                        }}
-                    />
-                    <MenuItem
-                        icon={Phone}
-                        label="Phone Number"
-                        initialValue={phoneNumber}
-                        onUpdate={(value) => handleFieldUpdate('phone', value, setPhoneNumber)}
-                        isLoading={loadingStates.phone}
-                        error={errorStates.phone}
-                        validation={(value) => {
-                            const phoneRegex = /^\+?[\d\s-]{10,}$/;
-                            return phoneRegex.test(value) ? '' : 'Please enter a valid phone number';
-                        }}
-                    />
-                    <MenuItem
-                        icon={Lock}
-                        label="Change Password"
-                        onUpdate={() => {
-                            // Navigate to password change page
-                            console.log('Navigating to password change page');
-                        }}
-                    />
-                </SettingsSection>
-
-                <SettingsSection title="Notifications">
-                    <ToggleItem
-                        icon={Bell}
-                        label="Push Notifications"
-                        enabled={true}
-                        onToggle={(enabled) => {
-                            console.log('Push notifications:', enabled)
-                            // Add your push notifications toggle logic here
-                        }}
-                    />
-                    <ToggleItem
-                        icon={Bell}
-                        label="Email Notifications"
-                        enabled={false}
-                        onToggle={(enabled) => {
-                            console.log('Email notifications:', enabled)
-                            // Add your email notifications toggle logic here
-                        }}
-                    />
-                </SettingsSection>
-
-                {/* Preferences */}
-                <SettingsSection title="Preferences">
-                    <ToggleItem
-                        icon={Moon}
-                        label="Dark Mode"
-                        enabled={false}
-                        onToggle={(enabled) => {
-                            console.log('Dark mode:', enabled)
-                            // Add your dark mode toggle logic here
-                        }}
-                    />
-                    <MenuItem
-                        icon={Languages}
-                        label="Language"
-                        initialValue={language}
-                        onUpdate={setLanguage}
-                    />
-                </SettingsSection>
-
-                {/* Help & Support */}
-                <SettingsSection title="Help & Support">
-                    <MenuItem
-                        icon={HelpCircle}
-                        label="FAQs"
-                        onUpdate={() => {
-                            console.log('Navigating to FAQs page')
-                            // Add your FAQ navigation logic here
-                        }}
-                    />
-                    <MenuItem
-                        icon={HelpCircle}
-                        label="Contact Support"
-                        onUpdate={() => {
-                            console.log('Navigating to Support page')
-                            // Add your support navigation logic here
-                        }}
-                    />
-                </SettingsSection>
-
-                {/* Version Info */}
-                <div className="text-center text-sm text-gray-400">
-                    Version 1.0.0
-                </div>
-            </div>
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-10 py-4">
+        <div className="max-w-2xl mx-auto px-4 flex items-center gap-3">
+          <Link to="/profile" className="text-gray-500 hover:text-gray-700">
+            <ChevronLeft className="w-6 h-6" />
+          </Link>
+          <h1 className="text-xl font-bold text-gray-900">Settings</h1>
         </div>
-    )
+      </div>
+
+      <div className="max-w-2xl mx-auto p-4">
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
+            <p>{error}</p>
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4" role="alert">
+            <p>{successMessage}</p>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Username Section */}
+          <div className="bg-white p-4 rounded-lg shadow-sm">
+            <h2 className="text-lg font-semibold mb-4">Update Username</h2>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">New Username</label>
+              <div className="flex items-center">
+                <User className="w-5 h-5 text-gray-400 mr-2" />
+                <input
+                  type="text"
+                  {...register('username', {
+                    minLength: {
+                      value: 3,
+                      message: 'Username must be at least 3 characters'
+                    }
+                  })}
+                  className="flex-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Enter new username"
+                />
+              </div>
+              {errors.username && (
+                <p className="text-red-500 text-sm">{errors.username.message}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Email Section */}
+          <div className="bg-white p-4 rounded-lg shadow-sm">
+            <h2 className="text-lg font-semibold mb-4">Update Email</h2>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">New Email</label>
+              <div className="flex items-center">
+                <Mail className="w-5 h-5 text-gray-400 mr-2" />
+                <input
+                  type="email"
+                  {...register('email', {
+                    pattern: {
+                      value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                      message: 'Please enter a valid email'
+                    }
+                  })}
+                  className="flex-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Enter new email"
+                />
+              </div>
+              {errors.email && (
+                <p className="text-red-500 text-sm">{errors.email.message}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Password Section */}
+          <div className="bg-white p-4 rounded-lg shadow-sm">
+            <h2 className="text-lg font-semibold mb-4">Update Password</h2>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Current Password</label>
+                <div className="flex items-center">
+                  <Lock className="w-5 h-5 text-gray-400 mr-2" />
+                  <input
+                    type="password"
+                    {...register('currentPassword')}
+                    className="flex-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="Enter current password"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">New Password</label>
+                <div className="flex items-center">
+                  <Lock className="w-5 h-5 text-gray-400 mr-2" />
+                  <input
+                    type="password"
+                    {...register('newPassword', {
+                      minLength: {
+                        value: 6,
+                        message: 'Password must be at least 6 characters'
+                      }
+                    })}
+                    className="flex-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="Enter new password"
+                  />
+                </div>
+                {errors.newPassword && (
+                  <p className="text-red-500 text-sm">{errors.newPassword.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Confirm New Password</label>
+                <div className="flex items-center">
+                  <Lock className="w-5 h-5 text-gray-400 mr-2" />
+                  <input
+                    type="password"
+                    {...register('confirmPassword')}
+                    className="flex-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="Confirm new password"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-pink-700 text-white py-2 px-4 rounded-md hover:bg-pink-600 disabled:opacity-50 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          >
+            {loading ? 'Updating...' : 'Save Changes'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 }
 
-export default Settings
+export default Settings;
