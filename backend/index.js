@@ -15,7 +15,7 @@ const app = express()
 const isDevelopment = process.env.NODE_ENV === 'development';
 const allowedOrigins = [
   'http://localhost:5173',
-  'http://192.168.152.133:5173',
+  'https://woman-safety-app-front.vercel.app',
 ];
 
 app.use(cors({
