@@ -34,7 +34,7 @@ function Signup() {
             }
 
             setIsLoading(true);
-            const response = await api.post(Config.SignUPUrl,
+            const response = await axios.post(Config.SignUPUrl,
                 {
                     username: data.userName,
                     email: data.email,

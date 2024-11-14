@@ -21,7 +21,7 @@ function Login() {
         setIsLoading(true);
         console.log(data)
         try {
-            const response = await api.post(Config.LOGINUrl, {
+            const response = await axios.post(Config.LOGINUrl, {
                 email: data.email,
                 password: data.password
             });
