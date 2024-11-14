@@ -133,7 +133,7 @@ const GoogleAuthController = async (req, res) => {
       username: name,
       email,
       googleId,
-      profilePhoto: picture || "../Utils/woman.webp", 
+      profilePhoto: picture || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvFbJHIvlkPWSvsJ1rWRbr64ZPiCCdb1SCLg&s", 
       isGoogleUser: true,
       reviews: [],
       contacts: []
@@ -220,6 +220,7 @@ const GetUserInfo = async (req, res) => {
       profilePhoto: user.profilePhoto,
       reviews: user.reviews,
       contacts: user.contacts,
+      isGoogleUser: user.isGoogleUser
     });
   } catch (error) {
     console.error("Error fetching user data:", error); // Log error for debugging
