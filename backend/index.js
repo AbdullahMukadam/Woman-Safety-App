@@ -12,16 +12,11 @@ import cors from "cors"
 dotenv.config()
 const app = express()
 
-const isDevelopment = process.env.NODE_ENV === 'production';
-const allowedOrigins = [
-  'http://localhost:5173',
-  'https://woman-safety-app-front.vercel.app',
-];
 
 app.use(cors({
-  origin: isDevelopment
-    ? true
-    : allowedOrigins,
+  origin: process.env.NODE_ENV === "production" 
+    ? 'https://woman-safety-app-front.vercel.app'
+    : 'http://localhost:5173',
   credentials: true
 }));
 app.use(express.json());
