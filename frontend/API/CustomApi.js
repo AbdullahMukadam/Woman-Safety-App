@@ -1,12 +1,14 @@
 import axios from 'axios';
-import { Config } from './Config';
+
+const baseURL = 'https://woman-safety-app-api.vercel.app'
+  
 
 const api = axios.create({
-  baseURL: Config.baseUrl,
-  withCredentials: true, // This is crucial for cookies
+  baseURL,
+  withCredentials: true,
   headers: {
-    'Content-Type': 'application/json'
-  }
+    'Content-Type': 'application/json',
+  },
 });
 
 

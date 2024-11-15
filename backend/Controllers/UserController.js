@@ -65,9 +65,11 @@ const Login = async (req, res) => {
 
       res.cookie("jwt", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: true, // Always true for Vercel deployments
+        sameSite: 'None', // Required for cross-origin
         sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
         maxAge: 30 * 24 * 60 * 60 * 1000,
+        path:"/"
       })
         .status(200).json({
           _id: exitsEmail._id,
