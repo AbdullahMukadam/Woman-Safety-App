@@ -1,16 +1,10 @@
 import axios from 'axios';
+import { Config } from './Config';
 
-const baseURL = 'https://woman-safety-app-api.vercel.app'
-  
 
 const api = axios.create({
-  baseURL,
-  withCredentials: true,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: Config.baseUrl,
+  withCredentials: Config.baseUrl.startsWith('http') && new URL(Config.baseUrl).origin !== window.location.origin
 });
-
-
 
 export default api;
