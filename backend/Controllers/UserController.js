@@ -67,7 +67,6 @@ const Login = async (req, res) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
-        domain: process.env.NODE_ENV === "production" ? 'https://woman-safety-app-front.vercel.app' : 'localhost',
         maxAge: 30 * 24 * 60 * 60 * 1000,
       })
         .status(200).json({
