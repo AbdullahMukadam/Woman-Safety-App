@@ -56,7 +56,7 @@ const Login = async (req, res) => {
   const exitsEmail = await User.findOne({ email });
 
   if (!exitsEmail || exitsEmail.isGoogleUser) {
-    return res.status(401).json({ message: `${!exitsEmail ? "No User Found" : "This email is already registered with a different login method" }` });
+    return res.status(401).json({ message: `${!exitsEmail ? "No User Found" : "This email is already registered with a different login method"}` });
   } else {
     const comparePassword = await bcrypt.compare(password, exitsEmail.password);
     if (comparePassword) {
@@ -67,6 +67,7 @@ const Login = async (req, res) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+        domain: process.env.NODE_ENV === "production" ? 'https://woman-safety-app-front.vercel.app' : 'localhost',
         maxAge: 30 * 24 * 60 * 60 * 1000,
       })
         .status(200).json({
@@ -96,18 +97,18 @@ const GoogleAuthController = async (req, res) => {
   try {
     const { email, name, googleId, picture } = req.body;
 
-   
+
     let existingUser = await User.findOne({ email });
 
     if (existingUser) {
-      
+
       if (!existingUser.isGoogleUser) {
         return res.status(400).json({
           message: "This email is already registered with a different login method"
         });
       }
 
-      
+
       existingUser.googleId = googleId;
       if (picture) {
         existingUser.profilePhoto = picture;
@@ -130,12 +131,12 @@ const GoogleAuthController = async (req, res) => {
       });
     }
 
-    
+
     const newUser = await User.create({
       username: name,
       email,
       googleId,
-      profilePhoto: picture || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvFbJHIvlkPWSvsJ1rWRbr64ZPiCCdb1SCLg&s", 
+      profilePhoto: picture || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvFbJHIvlkPWSvsJ1rWRbr64ZPiCCdb1SCLg&s",
       isGoogleUser: true,
       reviews: [],
       contacts: []
@@ -165,13 +166,13 @@ const GoogleAuthController = async (req, res) => {
 
 const Authentication = async (req, res) => {
   try {
-    const token = req.cookies.jwt; 
+    const token = req.cookies.jwt;
 
     if (!token) {
       return res.status(401).json({ authenticated: false, message: 'Token missing!' });
     }
 
-    
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const userData = await User.findById(decoded.id);
@@ -181,7 +182,7 @@ const Authentication = async (req, res) => {
 
     //console.log("Authenticated User:", userData);
 
-    
+
     return res.status(200).json({
       authenticated: true,
       user: {
@@ -202,17 +203,17 @@ const Authentication = async (req, res) => {
 };
 
 const GetUserInfo = async (req, res) => {
-  const { email } = req.query; 
+  const { email } = req.query;
 
   if (!email) {
-    return res.status(400).json({ message: "Email is required" }); 
+    return res.status(400).json({ message: "Email is required" });
   }
 
   try {
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(404).json({ message: "No User Found" }); 
+      return res.status(404).json({ message: "No User Found" });
     }
 
     res.status(200).json({
