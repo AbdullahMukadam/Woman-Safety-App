@@ -95,7 +95,7 @@ function AfterLogin() {
 
       // Check and log permission status
       const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
-      console.log('Initial permission status:', permissionStatus.state);
+     // console.log('Initial permission status:', permissionStatus.state);
 
       // If permission is denied, show instructions
       if (permissionStatus.state === 'denied') {

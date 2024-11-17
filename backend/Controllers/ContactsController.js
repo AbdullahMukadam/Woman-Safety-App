@@ -17,11 +17,11 @@ const AddContact = async (req, res) => {
   try {
 
     if (req.file) {
-      console.log("Received file:", req.file);
+     // console.log("Received file:", req.file);
 
 
       photo = await cloudinaryUpload(req.file.path);
-      console.log("Uploaded photo URL:", photo);
+     // console.log("Uploaded photo URL:", photo);
 
       fs.unlink(req.file.path, (err) => {
         if (err) console.error("Error deleting local file:", err);
@@ -108,7 +108,7 @@ const DeleteContact = async (req, res) => {
 const SendEmergencyInfo = async (req, res) => {
   try {
     const { contactNumbers, location } = req.body;
-    console.log('Received data:', { contactNumbers, location });
+   // console.log('Received data:', { contactNumbers, location });
 
     // Validate input
     if (!contactNumbers || !location || !location.latitude || !location.longitude) {

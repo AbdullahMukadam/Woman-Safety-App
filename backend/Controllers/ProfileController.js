@@ -17,11 +17,11 @@ const AddProfilePhoto = async (req, res) => {
 
         // Check if a file is provided in the request
         if (req.file) {
-            console.log("Received file:", req.file);
+            //console.log("Received file:", req.file);
 
             // Upload the file to Cloudinary
             photo = await cloudinaryUpload(req.file.path);
-            console.log("Uploaded photo URL:", photo);
+           // console.log("Uploaded photo URL:", photo);
 
             // Delete the file from the local server
             fs.unlink(req.file.path, (err) => {

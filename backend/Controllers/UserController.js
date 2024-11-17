@@ -61,7 +61,7 @@ const Login = async (req, res) => {
     const comparePassword = await bcrypt.compare(password, exitsEmail.password);
     if (comparePassword) {
       const token = CreateToken(exitsEmail._id);
-      console.log(token)
+     // console.log(token)
 
       res.cookie("jwt", token, {
         httpOnly: true,

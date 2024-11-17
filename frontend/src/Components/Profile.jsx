@@ -80,7 +80,7 @@ function Profile() {
 
 
       if (response.status === 200) {
-        console.log("Updated User:", response.data.updatedUser);
+       // console.log("Updated User:", response.data.updatedUser);
         setUser((prevUser) => ({
           ...prevUser,
           profilePhoto: response.data.updatedUser.profilePhoto
