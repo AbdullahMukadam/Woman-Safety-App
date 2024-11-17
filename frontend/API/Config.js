@@ -1,19 +1,19 @@
- export const Config = {
-   baseUrl : String(import.meta.env.VITE_BASE_URL),
-    SignUPUrl : String(import.meta.env.VITE_SIGNUP_URL),
-    LOGINUrl: String(import.meta.env.VITE_LOGIN_URL),
-    GoogleClientId : String(import.meta.env.VITE_GOOGLE_CLIENT_ID),
-    GoogleSignUpUrl : String(import.meta.env.VITE_GOOGLELOGIN_URL),
-    LogoutUrl : String(import.meta.env.VITE_LOGOUT_URL),
-    ContactUrl: String(import.meta.env.VITE_ADDCONTACT_URL),
-    GETDATAUrl : String(import.meta.env.VITE_GETDATA_URL),
-    CHECKAuthUrl : String(import.meta.env.VITE_CHECKAUTH_URL),
-    DELETECONTACTUrl : String(import.meta.env.VITE_DELETECONTACT_URL),
-    EMERGENCYUrl : String(import.meta.env.VITE_EMERGENCY_URL),
-    ADDREVIEWUrl : String(import.meta.env.VITE_ADDREVIEW_URL),
-    GETREVIEWSUrl : String(import.meta.env.VITE_GETALLREVIEWS_URL),
-    ADDPROFILEPHOTO : String(import.meta.env.VITE_ADDPROFILEPHOTO_URL),
-    UPDATEUSERNAME : String(import.meta.env.VITE_UPDATEUSERNAME_URL),
-    UPDATEEMAIL : String(import.meta.env.VITE_UPDATEEMAIL_URL),
-    UPDATEPASSWORD : String(import.meta.env.VITE_UPDATEPASSWORD_URL)
- }
+export const Config = {
+  baseUrl: "https://woman-safety-app.onrender.com/api/user",
+  SignUPUrl: "https://woman-safety-app.onrender.com/api/user/signup",
+  LOGINUrl: "https://woman-safety-app.onrender.com/api/user/login",
+  GoogleClientId: "748627875694-hqpvo0akdcvtgjpvqluoap2dm3bafbia.apps.googleusercontent.com",
+  GoogleSignUpUrl: "https://woman-safety-app.onrender.com/api/user/googleLogin",
+  LogoutUrl: "https://woman-safety-app.onrender.com/api/user/logout",
+  ContactUrl: "https://woman-safety-app.onrender.com/api/contacts/addcontact",
+  GETDATAUrl: "https://woman-safety-app.onrender.com/api/user/get-data",
+  CHECKAuthUrl: "https://woman-safety-app.onrender.com/api/user/auth-check",
+  DELETECONTACTUrl: "https://woman-safety-app.onrender.com/api/contacts/delete-contact",
+  EMERGENCYUrl: "https://woman-safety-app.onrender.com/api/contacts/emergency",
+  ADDREVIEWUrl: "https://woman-safety-app.onrender.com/api/reviews/addreview",
+  GETREVIEWSUrl: "https://woman-safety-app.onrender.com/api/reviews/allreviews",
+  ADDPROFILEPHOTO: "https://woman-safety-app.onrender.com/api/profile/add-photo",
+  UPDATEUSERNAME: "https://woman-safety-app.onrender.com/api/profile/update-name",
+  UPDATEEMAIL: "https://woman-safety-app.onrender.com/api/profile/update-email",
+  UPDATEPASSWORD: "https://woman-safety-app.onrender.com/api/profile/update-password"
+}
