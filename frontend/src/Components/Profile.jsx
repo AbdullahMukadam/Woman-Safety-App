@@ -50,8 +50,8 @@ function Profile() {
       return;
     }
 
-    // Validate file size (e.g., 5MB limit)
-    const MAX_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+    
+    const MAX_SIZE = 5 * 1024 * 1024; 
     if (file.size > MAX_SIZE) {
       alert('File size should be less than 5MB');
       reset({ photo: null });

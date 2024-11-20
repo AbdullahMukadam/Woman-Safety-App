@@ -88,12 +88,12 @@ function AfterLogin() {
 
     setShowLoader(true);
     try {
-      // First check if we're in a secure context
+      
       if (!window.isSecureContext && window.location.hostname !== 'localhost') {
         throw new Error('Geolocation requires HTTPS or localhost');
       }
 
-      // Check and log permission status
+     
       const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
      // console.log('Initial permission status:', permissionStatus.state);
 
@@ -108,9 +108,9 @@ function AfterLogin() {
         return;
       }
 
-      // Get position with timeout
+     
       const position = await new Promise((resolve, reject) => {
-        // Set a timeout for the geolocation request
+        
         const timeoutId = setTimeout(() => {
           reject(new Error('Location request timed out'));
         }, 10000);
@@ -146,16 +146,16 @@ function AfterLogin() {
 
       const { latitude, longitude } = position.coords;
 
-      // Prepare contact numbers
+      
       const contactNumbers = MobileNo.map(contact => contact.MobileNo);
 
-      // Log the data being sent
+      
       console.log('Sending emergency data:', {
         contactNumbers,
         location: { latitude, longitude }
       });
 
-      // Make API call
+      
       const response = await api.post(Config.EMERGENCYUrl, {
         contactNumbers,
         location: { latitude, longitude }
@@ -190,7 +190,7 @@ function AfterLogin() {
   };
 
   const testLocation = () => {
-    let isHandled = false;  // Flag to prevent multiple callbacks
+    let isHandled = false;  
   
     if (!navigator.geolocation) {
       alert('Geolocation is not supported by this browser');

@@ -54,10 +54,10 @@ const UserContextProvider = ({ children }) => {
             const response = await api.post(Config.LogoutUrl);
 
             if (response) {
-                localStorage.clear(); // Clear all stored data
+                localStorage.clear(); 
                 setAuth(false);
                 setUser(null);
-                // Optionally redirect or notify
+                
                 console.log("Logged out successfully.");
             }
         } catch (error) {

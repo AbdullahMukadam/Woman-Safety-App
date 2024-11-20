@@ -7,7 +7,7 @@ import bcrypt from "bcryptjs";
 const AddProfilePhoto = async (req, res) => {
     const { userId } = req.body;
 
-    // Check if userId is provided
+    
     if (!userId) {
         return res.status(400).json({ message: "UserId not received" });
     }
@@ -15,15 +15,15 @@ const AddProfilePhoto = async (req, res) => {
     try {
         let photo;
 
-        // Check if a file is provided in the request
+        
         if (req.file) {
             //console.log("Received file:", req.file);
 
-            // Upload the file to Cloudinary
+            
             photo = await cloudinaryUpload(req.file.path);
            // console.log("Uploaded photo URL:", photo);
 
-            // Delete the file from the local server
+            
             fs.unlink(req.file.path, (err) => {
                 if (err) {
                     console.error("Error deleting local file:", err);
@@ -33,28 +33,28 @@ const AddProfilePhoto = async (req, res) => {
             });
         } else {
             console.warn("No file provided, using default photo.");
-            photo = "https://via.placeholder.com/150";  // Default placeholder image URL
+            photo = "https://via.placeholder.com/150";  L
         }
 
-        // Find the user by ID and update their profile photo
+        
         const user = await User.findByIdAndUpdate(
             userId,
             { profilePhoto: photo },
             { new: true }
         );
 
-        // If user is not found, return 404
+        
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // Successfully updated the user's profile photo
+        
         return res.status(200).json({
             message: "Profile photo updated successfully",
             updatedUser: user
         });
     } catch (error) {
-        // Handle any errors that occurred during the process
+      
         console.error("Error in AddProfilePhoto:", error);
         return res.status(500).json({ message: "An error occurred while updating the profile photo" });
     }
@@ -64,7 +64,6 @@ const UpdateUsername = async (req, res) => {
     try {
         const { userId, username } = req.body;
 
-        // Validate input
         if (!userId || !username) {
             return res.status(400).json({
                 success: false,
@@ -114,7 +113,7 @@ const UpdateEmail = async (req, res) => {
     try {
         const { userId, email, isGoogleUser } = req.body;
 
-        // Validate input
+       
         if (!userId || !email) {
             return res.status(400).json({
                 success: false,
@@ -128,7 +127,7 @@ const UpdateEmail = async (req, res) => {
             });
         }
 
-        // Check if user exists
+        
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({
@@ -137,7 +136,7 @@ const UpdateEmail = async (req, res) => {
             });
         }
 
-        // Check if email is already in use by another user
+        
         const existingUser = await User.findOne({ email, _id: { $ne: userId } });
         if (existingUser) {
             return res.status(400).json({
@@ -146,7 +145,7 @@ const UpdateEmail = async (req, res) => {
             });
         }
 
-        // Update email
+        
         user.email = email;
         await user.save();
 
@@ -165,12 +164,12 @@ const UpdateEmail = async (req, res) => {
     }
 };
 
-// Update Password
+
 const UpdatePassword = async (req, res) => {
     try {
         const { userId, currentPassword, newPassword } = req.body;
 
-        // Validate input
+        
         if (!userId || !currentPassword || !newPassword) {
             return res.status(400).json({
                 success: false,
@@ -178,7 +177,7 @@ const UpdatePassword = async (req, res) => {
             });
         }
 
-        // Find user
+      
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({
@@ -187,7 +186,7 @@ const UpdatePassword = async (req, res) => {
             });
         }
 
-        // Verify current password
+        
         const isMatch = await bcrypt.compare(currentPassword, user.password);
         if (!isMatch) {
             return res.status(400).json({
@@ -196,7 +195,7 @@ const UpdatePassword = async (req, res) => {
             });
         }
 
-        // Check if new password is different from current password
+       
         if (currentPassword === newPassword) {
             return res.status(400).json({
                 success: false,
@@ -204,11 +203,11 @@ const UpdatePassword = async (req, res) => {
             });
         }
 
-        // Hash new password
+        
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-        // Update password
+       
         user.password = hashedPassword;
         await user.save();
 

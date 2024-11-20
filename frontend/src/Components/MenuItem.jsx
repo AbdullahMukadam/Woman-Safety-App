@@ -8,14 +8,14 @@ const MenuItem = ({
     initialValue = "", 
     isLoading = false,
     error = "",
-    validation = (value) => ""  // Optional validation function
+    validation = (value) => ""  
 }) => {
     const [value, setValue] = useState(initialValue)
     const [isEditing, setIsEditing] = useState(false)
     const [validationError, setValidationError] = useState("")
 
     const handleSubmit = () => {
-        // Check validation first
+       
         const validationResult = validation(value);
         if (validationResult) {
             setValidationError(validationResult);

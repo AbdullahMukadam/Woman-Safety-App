@@ -110,20 +110,20 @@ const SendEmergencyInfo = async (req, res) => {
     const { contactNumbers, location } = req.body;
    // console.log('Received data:', { contactNumbers, location });
 
-    // Validate input
+    
     if (!contactNumbers || !location || !location.latitude || !location.longitude) {
       return res.status(400).json({
         message: "Contact numbers and location are required"
       });
     }
 
-    // Create Google Maps link
+   
     const mapsLink = `https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}`;
 
-    // Message text (keep it under 160 characters for SMS)
+    
     const messageText = `EMERGENCY ALERT! Location: ${mapsLink} Please respond immediately.`;
 
-    // Send SMS to all numbers
+   
     const smsPromises = contactNumbers.map(async (number) => {
       try {
         const response = await axios({
@@ -134,9 +134,9 @@ const SendEmergencyInfo = async (req, res) => {
             'Content-Type': 'application/json'
           },
           data: {
-            route: 'q', // Quick SMS route
+            route: 'q', 
             message: messageText,
-            numbers: number.replace(/\D/g, ''), // Remove non-digits
+            numbers: number.replace(/\D/g, ''), 
             flash: 0
           }
         });
@@ -157,10 +157,10 @@ const SendEmergencyInfo = async (req, res) => {
       }
     });
 
-    // Wait for all SMS to be sent
+    
     const results = await Promise.all(smsPromises);
 
-    // Check results
+    
     const successfulSends = results.filter(result => result.status === 'success');
 
     if (successfulSends.length === 0) {

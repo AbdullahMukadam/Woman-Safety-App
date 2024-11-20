@@ -34,7 +34,7 @@ function Settings() {
     setSuccessMessage('');
   
     try {
-      // Update username
+      
       if (data.username) {
         const response = await api.post(Config.UPDATEUSERNAME, {
           userId: user._id,
@@ -47,7 +47,7 @@ function Settings() {
         }
       }
   
-      // Update email
+      
       if (data.email) {
         const response = await api.post(Config.UPDATEEMAIL, {
           userId: user._id,
@@ -61,7 +61,7 @@ function Settings() {
         }
       }
   
-      // Update password
+      
       if (data.currentPassword && data.newPassword) {
         if (data.newPassword !== data.confirmPassword) {
           setError('New passwords do not match');
