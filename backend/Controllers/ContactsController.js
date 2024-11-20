@@ -128,7 +128,7 @@ const SendEmergencyInfo = async (req, res) => {
       try {
         const response = await axios({
           method: 'post',
-          url: 'https://www.fast2sms.com/dev/bulk',
+          url: 'https://www.fast2sms.com/dev/bulkV2',
           headers: {
             'authorization': process.env.FAST2SMS_API_KEY,
             'Content-Type': 'application/json'
