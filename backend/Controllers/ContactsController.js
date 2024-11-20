@@ -118,7 +118,7 @@ const SendEmergencyInfo = async (req, res) => {
     }
 
     // Create Google Maps link
-    const mapsLink = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
+    const mapsLink = `https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}`;
 
     // Message text (keep it under 160 characters for SMS)
     const messageText = `EMERGENCY ALERT! Location: ${mapsLink} Please respond immediately.`;
