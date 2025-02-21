@@ -34,7 +34,7 @@ const Signup = async (req, res) => {
       const token = CreateToken(NewUser._id);
       res.cookie("jwt", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: process.env.NODE_ENV ,
         maxAge: 30 * 24 * 60 * 60 * 1000,
       })
         .status(200).json({
@@ -65,7 +65,7 @@ const Login = async (req, res) => {
 
       res.cookie("jwt", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production", 
+        secure: process.env.NODE_ENV, 
         maxAge: 30 * 24 * 60 * 60 * 1000,
       })
         .status(200).json({
@@ -117,7 +117,7 @@ const GoogleAuthController = async (req, res) => {
 
       return res.cookie("jwt", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: process.env.NODE_ENV,
         maxAge: 30 * 24 * 60 * 60 * 1000,
       }).status(200).json({
         _id: existingUser._id,
@@ -144,7 +144,7 @@ const GoogleAuthController = async (req, res) => {
 
     res.cookie("jwt", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: process.env.NODE_ENV ,
       maxAge: 30 * 24 * 60 * 60 * 1000,
     }).status(200).json({
       _id: newUser._id,
