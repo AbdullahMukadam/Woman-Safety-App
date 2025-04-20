@@ -39,6 +39,11 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: "Something went wrong!", error: err.message });
 });
+
+
+app.get("/", (req, res) => {
+  res.send("hello")
+})
 /* app.use(express.static(path.join(_dirname, "/frontend/dist")))
 app.get("*", (req, res) => {
   res.sendFile(path.resolve(_dirname, "frontend", "dist", "index.html"))

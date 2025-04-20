@@ -4,9 +4,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon backend/index.js",
-    "start": "node backend/index.js",
-    "build": "npm install && cd frontend && npm install && npx vite build"
+    "dev": "nodemon index.js",
+    "start": "node index.js",
+    "build": "npm install "
   },
   "keywords": [],
   "author": "",
