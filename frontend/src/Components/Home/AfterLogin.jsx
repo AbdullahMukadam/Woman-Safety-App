@@ -172,7 +172,9 @@ function AfterLogin() {
 
       let errorMessage = 'An unexpected error occurred';
 
-      if (error.code === 2) {
+      if (error.code === 1) {
+        errorMessage = 'Location access was denied. Please enable location services and try again.';
+      } else if (error.code === 2) {
         errorMessage = 'Location is currently unavailable. Please try again.';
       } else if (error.code === 3) {
         errorMessage = 'Location request timed out. Please try again.';
