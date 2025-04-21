@@ -80,10 +80,10 @@ function AfterLogin() {
     setMobileNo(Array.isArray(user?.contacts) ? user.contacts : []);
   }, [user]);
 
-  // IP-based geolocation fallback
+
   const getIPBasedLocation = async () => {
     try {
-      // First try a free API
+
       let response = await fetch('https://ipapi.co/json/');
       if (!response.ok) throw new Error('First IP API failed');
 
@@ -92,12 +92,12 @@ function AfterLogin() {
         return {
           latitude: data.latitude,
           longitude: data.longitude,
-          accuracy: 50000, // ~50km accuracy for IP-based
+          accuracy: 50000,
           method: 'ipapi'
         };
       }
 
-      // Fallback to another free API if first fails
+
       response = await fetch('https://ipwho.is/');
       if (!response.ok) throw new Error('Second IP API failed');
 
@@ -114,9 +114,9 @@ function AfterLogin() {
     }
   };
 
-  // Main location handler with fallbacks
+
   const getLocation = async () => {
-    // Try GPS first
+
     if (navigator.geolocation) {
       try {
         const position = await new Promise((resolve, reject) => {
@@ -139,7 +139,7 @@ function AfterLogin() {
       }
     }
 
-    // Fall back to IP-based
+
     try {
       const ipLocation = await getIPBasedLocation();
       setLocationMethod('ip');
@@ -259,7 +259,7 @@ function AfterLogin() {
 
 
       <div className="w-full p-4">
-        <h1 className="text-gray-900 text-2xl font-bold">Emergency Contacts</h1>
+        <h1 className="text-gray-900 text-xl font-bold md:text-2xl">Emergency Contacts</h1>
         <div className="w-full flex flex-col gap-3 mt-4 md:flex-row md:flex-wrap md:justify-center md:items-center">
           {contactsdata.length > 0 ? (
             contactsdata.map((contact, index) => (

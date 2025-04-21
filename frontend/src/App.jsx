@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom"
+import { BrowserRouter, Route, Routes } from "react-router-dom"
 import './App.css'
 import Home from './Components/Home/Home'
 import Login from './Components/Login'
@@ -20,7 +20,7 @@ function App() {
 
   return (
     <BrowserRouter>
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-screen max-w-[85rem] mx-auto">
         <Navbar />
         <main className="flex-1 pt-[7px]">
           <Routes>
