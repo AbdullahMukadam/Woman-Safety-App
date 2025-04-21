@@ -72,71 +72,51 @@ function AfterLogin() {
     }
   };
 
-  const checkLocationSupport = () => {
+  /* const checkLocationSupport = () => {
     if (!navigator.geolocation) {
       console.error('Geolocation is not supported by this browser');
       return false;
     }
     return true;
-  };
+  }; */
 
   const handleSOS = async () => {
-    if (!checkLocationSupport()) {
-      toast.error('Geolocation is not supported by your browser');
-      return;
-    }
-
+    // Clear any previous error states
     setShowLoader(true);
+    console.log("Starting SOS sequence...");
+
     try {
-      // Check for secure context
-      if (!window.isSecureContext && window.location.hostname !== 'localhost') {
-        toast.error('For security reasons, location access requires HTTPS');
-        throw new Error('Geolocation requires HTTPS or localhost');
+      // First, check permission explicitly before proceeding
+      console.log("Checking geolocation permission...");
+      let permissionStatus;
+
+      try {
+        permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
+        console.log("Permission status:", permissionStatus.state);
+      } catch (permError) {
+        console.error("Error checking permission:", permError);
+        // Some browsers might not support permissions API
       }
 
-      // Check permission status first
-      const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
-
-      if (permissionStatus.state === 'denied') {
-        toast.error(
-          "Location access was denied. Please enable location in your browser settings and try again.",
-          { autoClose: 5000 }
-        );
-
-        // Show browser-specific instructions
-        let browserInstructions = "Please enable location in your browser settings";
-        if (navigator.userAgent.includes("Chrome")) {
-          browserInstructions += ": Settings > Privacy and security > Site Settings > Location";
-        } else if (navigator.userAgent.includes("Firefox")) {
-          browserInstructions += ": Settings > Privacy & Security > Permissions > Location";
-        } else if (navigator.userAgent.includes("Safari")) {
-          browserInstructions += ": Preferences > Privacy > Location Services";
-        }
-
-        console.log(browserInstructions);
+      // Only explicitly block if we're certain permission is denied
+      if (permissionStatus && permissionStatus.state === 'denied') {
+        console.log("Permission explicitly denied");
+        alert("Location access is denied. Please enable location in your browser settings.");
         setShowLoader(false);
         return;
       }
 
-      // Get position with timeout
+      // Try getting location regardless of what the permission API says
+      console.log("Requesting current position...");
       const position = await new Promise((resolve, reject) => {
-        const timeoutId = setTimeout(() => {
-          reject(new Error('Location request timed out'));
-        }, 10000);
-
         navigator.geolocation.getCurrentPosition(
-          (position) => {
-            clearTimeout(timeoutId);
-            // Check if accuracy is too low (high number = less accurate)
-            if (position.coords.accuracy > 100000) {
-              console.warn('Low accuracy location received:', position.coords.accuracy);
-              toast.warning('Only approximate location available. For better results, try again outdoors.');
-            }
-            resolve(position);
+          (pos) => {
+            console.log("Position obtained with accuracy:", pos.coords.accuracy, "meters");
+            resolve(pos);
           },
-          (error) => {
-            clearTimeout(timeoutId);
-            reject(error);
+          (err) => {
+            console.error("Geolocation error code:", err.code, "message:", err.message);
+            reject(err);
           },
           {
             enableHighAccuracy: true,
@@ -146,33 +126,45 @@ function AfterLogin() {
         );
       });
 
-      const { latitude, longitude } = position.coords;
-      const contactNumbers = MobileNo.map(contact => contact.MobileNo);
+      // If we get here, we successfully got location
+      const { latitude, longitude, accuracy } = position.coords;
+      console.log(`Location: ${latitude}, ${longitude} (accuracy: ${accuracy}m)`);
 
-      // Send emergency alert
+      // Check accuracy but don't prevent sending alert
+      if (accuracy > 100000) {
+        console.warn("Low accuracy warning:", accuracy);
+        toast("Warning: Your location accuracy is very low. Emergency contacts will receive approximate location only.");
+      } else if (accuracy > 10000) {
+        console.warn("Moderate accuracy warning:", accuracy);
+        toast("Your location accuracy is moderate. For better results, try moving outdoors.");
+      }
+
+      // Send emergency alert regardless of accuracy
+      const contactNumbers = MobileNo.map(contact => contact.MobileNo);
+      console.log("Sending emergency alert to:", contactNumbers);
+
       const response = await api.post(Config.EMERGENCYUrl, {
         contactNumbers,
         location: { latitude, longitude }
       });
 
       if (response.status === 200) {
-        toast.success('Emergency alert sent successfully');
+        toast("Emergency alert sent successfully!");
       }
+
     } catch (error) {
-      let errorMessage = 'An unexpected error occurred';
+      console.error("Full error details:", error);
 
+      // Simplify error handling
       if (error.code === 1) {
-        errorMessage = 'Location access was denied. Please enable location services and try again.';
+        toast("Location permission denied. Please enable location access in your browser settings.");
       } else if (error.code === 2) {
-        errorMessage = 'Location is currently unavailable. Please try again.';
+        toast("Location unavailable. Please try again in a different area.");
       } else if (error.code === 3) {
-        errorMessage = 'Location request timed out. Please try again.';
-      } else if (error.message) {
-        errorMessage = error.message;
+        toast("Location request timed out. Please try again.");
+      } else {
+        toast(`Error: ${error.message || "Unknown error occurred"}`);
       }
-
-      console.error('Error sending emergency alert:', error);
-      toast.error(errorMessage);
     } finally {
       setShowLoader(false);
     }
