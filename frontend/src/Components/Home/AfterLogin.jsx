@@ -8,6 +8,7 @@ import api from '../../../API/CustomApi';
 import { Config } from '../../../API/Config';
 import Loader from './Loader';
 import axios from 'axios';
+import { toast } from "react-toastify"
 
 function AfterLogin() {
   const [showAddContact, setShowAddContact] = useState(false);
@@ -15,7 +16,9 @@ function AfterLogin() {
   const { user, setUser } = useContext(AuthContext);
   const [contactsdata, setContactsdata] = useState([]);
   const [showLoader, setShowLoader] = useState(false);
-  const [MobileNo, setMobileNo] = useState([])
+  const [MobileNo, setMobileNo] = useState([]);
+  const [locationMethod, setLocationMethod] = useState(null);
+  const [locationError, setLocationError] = useState(null);
 
   useEffect(() => {
     setContactsdata(Array.isArray(user?.contacts) ? user.contacts : []);
@@ -72,176 +75,185 @@ function AfterLogin() {
     }
   };
 
-  const checkLocationSupport = () => {
-    if (!navigator.geolocation) {
-      console.error('Geolocation is not supported by this browser');
-      return false;
+  useEffect(() => {
+    setContactsdata(Array.isArray(user?.contacts) ? user.contacts : []);
+    setMobileNo(Array.isArray(user?.contacts) ? user.contacts : []);
+  }, [user]);
+
+  // IP-based geolocation fallback
+  const getIPBasedLocation = async () => {
+    try {
+      // First try a free API
+      let response = await fetch('https://ipapi.co/json/');
+      if (!response.ok) throw new Error('First IP API failed');
+
+      const data = await response.json();
+      if (data.latitude && data.longitude) {
+        return {
+          latitude: data.latitude,
+          longitude: data.longitude,
+          accuracy: 50000, // ~50km accuracy for IP-based
+          method: 'ipapi'
+        };
+      }
+
+      // Fallback to another free API if first fails
+      response = await fetch('https://ipwho.is/');
+      if (!response.ok) throw new Error('Second IP API failed');
+
+      const fallbackData = await response.json();
+      return {
+        latitude: fallbackData.latitude,
+        longitude: fallbackData.longitude,
+        accuracy: 50000,
+        method: 'ipwhois'
+      };
+    } catch (error) {
+      console.error('IP geolocation failed:', error);
+      throw new Error('Could not determine approximate location from IP');
     }
-    return true;
+  };
+
+  // Main location handler with fallbacks
+  const getLocation = async () => {
+    // Try GPS first
+    if (navigator.geolocation) {
+      try {
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            resolve,
+            reject,
+            { enableHighAccuracy: true, timeout: 10000 }
+          );
+        });
+
+        setLocationMethod('gps');
+        return {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+          method: 'gps'
+        };
+      } catch (gpsError) {
+        console.log('GPS failed, falling back to IP:', gpsError);
+      }
+    }
+
+    // Fall back to IP-based
+    try {
+      const ipLocation = await getIPBasedLocation();
+      setLocationMethod('ip');
+      return ipLocation;
+    } catch (ipError) {
+      console.error('All location methods failed:', ipError);
+      throw new Error('Could not determine your location');
+    }
   };
 
   const handleSOS = async () => {
-    if (!checkLocationSupport()) {
-      alert('Geolocation is not supported by your browser');
-      return;
-    }
-
     setShowLoader(true);
+    setLocationError(null);
+
     try {
-
-      if (!window.isSecureContext && window.location.hostname !== 'localhost') {
-        throw new Error('Geolocation requires HTTPS or localhost');
+      if (MobileNo.length === 0) {
+        throw new Error('No emergency contacts available');
       }
 
-
-      const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
-      // console.log('Initial permission status:', permissionStatus.state);
-
-      // If permission is denied, show instructions
-      if (permissionStatus.state === 'denied') {
-        alert('Please enable location access in your browser settings and try again');
-        console.log('Please enable location in your browser settings:',
-          '\nChrome: Settings > Privacy and security > Site Settings > Location',
-          '\nFirefox: Settings > Privacy & Security > Permissions > Location',
-          '\nSafari: Preferences > Privacy > Location Services');
-        setShowLoader(false);
-        return;
-      }
-
-
-      const position = await new Promise((resolve, reject) => {
-
-        const timeoutId = setTimeout(() => {
-          reject(new Error('Location request timed out'));
-        }, 10000);
-
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            clearTimeout(timeoutId);
-            console.log('Position successfully received:', {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-              accuracy: position.coords.accuracy
-            });
-            resolve(position);
-          },
-          (error) => {
-            clearTimeout(timeoutId);
-            console.log('Detailed error information:', {
-              code: error.code,
-              message: error.message,
-              PERMISSION_DENIED: error.code === 1,
-              POSITION_UNAVAILABLE: error.code === 2,
-              TIMEOUT: error.code === 3
-            });
-            reject(error);
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-          }
-        );
-      });
-
-      const { latitude, longitude } = position.coords;
-
-
-      const contactNumbers = MobileNo.map(contact => contact.MobileNo);
-
-
-      console.log('Sending emergency data:', {
-        contactNumbers,
-        location: { latitude, longitude }
-      });
-
+      const location = await getLocation();
+      console.log('Using location:', location);
 
       const response = await api.post(Config.EMERGENCYUrl, {
-        contactNumbers,
-        location: { latitude, longitude }
+        contactNumbers: MobileNo.map(contact => contact.MobileNo),
+        location: {
+          latitude: location.latitude,
+          longitude: location.longitude,
+        }
       });
 
-      if (response.status === 200) {
-        console.log('Emergency alert sent successfully:', response.data);
-        alert('Emergency alert sent successfully');
-        console.log('SMS results:', response.data.results);
+      if (response.status === "success") {
+        toast.success(
+          <div>
+            <p>Emergency alert sent successfully!</p>
+            <p className="text-sm mt-1">
+              {location.method === 'gps' ? 'Using precise GPS location' :
+                'Using approximate IP-based location'}
+            </p>
+          </div>
+        );
+
       }
+
 
     } catch (error) {
-      console.error('Full error object:', error);
-
-      let errorMessage = 'An unexpected error occurred';
-
-      if (error.code === 1) {
-        errorMessage = 'Location access was denied. Please enable location services and try again.';
-      } else if (error.code === 2) {
-        errorMessage = 'Location is currently unavailable. Please try again.';
-      } else if (error.code === 3) {
-        errorMessage = 'Location request timed out. Please try again.';
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      console.error('Error message:', errorMessage);
-      alert(errorMessage);
+      console.error('SOS Error:', error);
+      setLocationError(error.message);
+      toast.error(
+        <div>
+          <p className="font-semibold">Emergency alert failed</p>
+          <p>{error.message}</p>
+          {error.message.includes('location') && (
+            <p className="text-sm mt-1">Please check your internet connection</p>
+          )}
+        </div>,
+        { autoClose: false }
+      );
     } finally {
       setShowLoader(false);
     }
   };
 
-  const testLocation = () => {
-    let isHandled = false;
-
-    if (!navigator.geolocation) {
-      alert('Geolocation is not supported by this browser');
-      return;
-    }
-
+  const testLocation = async () => {
+    toast.info('Testing location access...');
     try {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          if (isHandled) return;
-          isHandled = true;
-
-          console.log('Location test successful:', {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy,
-            timestamp: new Date(position.timestamp).toISOString()
-          });
-          alert('Location test successful! Check console for details.');
-        },
-        (error) => {
-          if (isHandled) return;
-          isHandled = true;
-
-          console.error('Location test error:', {
-            code: error.code,
-            message: error.message,
-            timestamp: new Date().toISOString()
-          });
-          alert(`Location test failed: ${error.message}`);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: 0
-        }
+      const location = await getLocation();
+      toast.success(
+        <div>
+          <p>Location test successful!</p>
+          <p className="text-sm mt-1">
+            Method: {location.method.toUpperCase()}
+            <br />
+            Accuracy: ~{Math.round(location.accuracy / 1000)}km
+          </p>
+        </div>
       );
-    } catch (e) {
-      console.error('Unexpected error during location test:', e);
+    } catch (error) {
+      toast.error(`Location test failed: ${error.message}`);
     }
   };
 
 
   return (
     <div className="w-full p-2 bg-slate-50">
+
+      {locationMethod && (
+        <div className={`p-2 mb-2 text-center ${locationMethod === 'gps' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+          }`}>
+          {locationMethod === 'gps' ? (
+            'Using precise GPS location'
+          ) : (
+            'Using approximate IP-based location'
+          )}
+        </div>
+      )}
+
+      {locationError && (
+        <div className="p-2 mb-2 bg-red-100 text-red-800 text-center">
+          {locationError}
+        </div>
+      )}
+
       <div className="w-full h-[40vh] p-2 flex items-center justify-center " onClick={handleSOS}>
         <SOSButton />
       </div>
-      {/* <button onClick={testLocation} className="your-button-class">
-        Test Location Access
-      </button> */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          testLocation();
+        }}
+        className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition-colors"
+      >
+        Test Location
+      </button>
 
       <div className="w-full p-4">
         <h1 className="text-gray-900 text-2xl font-bold">Emergency Contacts</h1>
