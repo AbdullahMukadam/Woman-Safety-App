@@ -34,8 +34,9 @@ const Signup = async (req, res) => {
       const token = CreateToken(NewUser._id);
       res.cookie("jwt", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV ,
+        secure: process.env.NODE_ENV,
         maxAge: 30 * 24 * 60 * 60 * 1000,
+        sameSite: "none"
       })
         .status(200).json({
           _id: NewUser._id,
@@ -61,12 +62,13 @@ const Login = async (req, res) => {
     const comparePassword = await bcrypt.compare(password, exitsEmail.password);
     if (comparePassword) {
       const token = CreateToken(exitsEmail._id);
-     // console.log(token)
+      // console.log(token)
 
       res.cookie("jwt", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV, 
+        secure: process.env.NODE_ENV,
         maxAge: 30 * 24 * 60 * 60 * 1000,
+        sameSite: "none"
       })
         .status(200).json({
           _id: exitsEmail._id,
@@ -84,7 +86,8 @@ const Login = async (req, res) => {
 const Logout = async (req, res) => {
   try {
     res.cookie("jwt", "", {
-      expiresIn: new Date()
+      expiresIn: new Date(),
+      sameSite: "none"
     }).json({ message: "Logout Successfully" });
   } catch (error) {
     res.status(400).json({ message: "Logout Unsuccessful" });
@@ -119,6 +122,7 @@ const GoogleAuthController = async (req, res) => {
         httpOnly: true,
         secure: process.env.NODE_ENV,
         maxAge: 30 * 24 * 60 * 60 * 1000,
+        sameSite: "none"
       }).status(200).json({
         _id: existingUser._id,
         email: existingUser.email,
@@ -144,8 +148,9 @@ const GoogleAuthController = async (req, res) => {
 
     res.cookie("jwt", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV ,
+      secure: process.env.NODE_ENV,
       maxAge: 30 * 24 * 60 * 60 * 1000,
+      sameSite: "none"
     }).status(200).json({
       _id: newUser._id,
       email: newUser.email,
