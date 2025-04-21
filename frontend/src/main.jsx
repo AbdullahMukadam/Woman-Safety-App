@@ -1,4 +1,4 @@
-import { StrictMode } from 'react'
+
 import { createRoot } from 'react-dom/client'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import App from './App.jsx'
@@ -12,13 +12,13 @@ const GOOGLE_CLIENT_ID = Config.GoogleClientId;
 
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <SmoothScrolling>
-        <UserContextProvider>
+
+  <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+    <SmoothScrolling>
+      <UserContextProvider>
         <App />
-        </UserContextProvider>        
-      </SmoothScrolling>
-    </GoogleOAuthProvider>
-  </StrictMode>,
+      </UserContextProvider>
+    </SmoothScrolling>
+  </GoogleOAuthProvider>
+
 )

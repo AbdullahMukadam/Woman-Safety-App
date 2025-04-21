@@ -10,8 +10,9 @@ import Map from "./Components/Map"
 import Reviews from "./Components/Reviews"
 import Profile from "./Components/Profile"
 import Settings from "./Components/Settings"
-import { useContext, useEffect } from "react"
+import { useContext } from "react"
 import { AuthContext } from "./Context/AuthContext"
+import { ToastContainer } from 'react-toastify';
 
 function App() {
   const { auth } = useContext(AuthContext)
@@ -56,6 +57,7 @@ function App() {
             } />
           </Routes>
         </main>
+        <ToastContainer />
       </div>
     </BrowserRouter>
   )

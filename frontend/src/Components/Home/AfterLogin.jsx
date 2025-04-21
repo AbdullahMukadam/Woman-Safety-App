@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import SOSButton from '../SOSButton';
 import { Plus, X, CircleX } from 'lucide-react';
 import BottomNav from './BottomNav';
@@ -7,7 +7,7 @@ import { AuthContext } from '../../Context/AuthContext';
 import api from '../../../API/CustomApi';
 import { Config } from '../../../API/Config';
 import Loader from './Loader';
-import axios from 'axios';
+import { toast } from 'react-toastify';
 
 function AfterLogin() {
   const [showAddContact, setShowAddContact] = useState(false);
@@ -88,18 +88,19 @@ function AfterLogin() {
 
     setShowLoader(true);
     try {
-      
+
       if (!window.isSecureContext && window.location.hostname !== 'localhost') {
         throw new Error('Geolocation requires HTTPS or localhost');
       }
 
-     
+
       const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
-     // console.log('Initial permission status:', permissionStatus.state);
+      // console.log('Initial permission status:', permissionStatus.state);
 
       // If permission is denied, show instructions
       if (permissionStatus.state === 'denied') {
-        alert('Please enable location access in your browser settings and try again');
+        //alert('Please enable location access in your browser settings and try again');
+        toast("Please enable location access in your browser settings and try again")
         console.log('Please enable location in your browser settings:',
           '\nChrome: Settings > Privacy and security > Site Settings > Location',
           '\nFirefox: Settings > Privacy & Security > Permissions > Location',
@@ -108,9 +109,9 @@ function AfterLogin() {
         return;
       }
 
-     
+
       const position = await new Promise((resolve, reject) => {
-        
+
         const timeoutId = setTimeout(() => {
           reject(new Error('Location request timed out'));
         }, 10000);
@@ -146,16 +147,16 @@ function AfterLogin() {
 
       const { latitude, longitude } = position.coords;
 
-      
+
       const contactNumbers = MobileNo.map(contact => contact.MobileNo);
 
-      
+
       console.log('Sending emergency data:', {
         contactNumbers,
         location: { latitude, longitude }
       });
 
-      
+
       const response = await api.post(Config.EMERGENCYUrl, {
         contactNumbers,
         location: { latitude, longitude }
@@ -190,19 +191,19 @@ function AfterLogin() {
   };
 
   const testLocation = () => {
-    let isHandled = false;  
-  
+    let isHandled = false;
+
     if (!navigator.geolocation) {
       alert('Geolocation is not supported by this browser');
       return;
     }
-  
+
     try {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           if (isHandled) return;
           isHandled = true;
-  
+
           console.log('Location test successful:', {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
@@ -214,7 +215,7 @@ function AfterLogin() {
         (error) => {
           if (isHandled) return;
           isHandled = true;
-  
+
           console.error('Location test error:', {
             code: error.code,
             message: error.message,
