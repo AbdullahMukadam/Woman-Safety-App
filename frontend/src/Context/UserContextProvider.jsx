@@ -31,10 +31,12 @@ const UserContextProvider = ({ children }) => {
 
             if (response.data.authenticated) {
                 const email = response.data.user.email;
-                setUserEmail(email); 
+                setUserEmail(email);
 
-                await getUserInfo(email); 
+                await getUserInfo(email);
                 setAuth(true);
+            } else {
+                await logout()
             }
         } catch (error) {
             console.error("Authentication check failed:", error);
@@ -46,7 +48,7 @@ const UserContextProvider = ({ children }) => {
     };
 
     useEffect(() => {
-        checkAuth(); 
+        checkAuth();
     }, []);
 
     const logout = async () => {
@@ -54,10 +56,10 @@ const UserContextProvider = ({ children }) => {
             const response = await api.post(Config.LogoutUrl);
 
             if (response) {
-                localStorage.clear(); 
+                localStorage.clear();
                 setAuth(false);
                 setUser(null);
-                
+
                 console.log("Logged out successfully.");
             }
         } catch (error) {
