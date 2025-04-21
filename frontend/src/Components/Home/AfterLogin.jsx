@@ -17,6 +17,7 @@ function AfterLogin() {
   const [showLoader, setShowLoader] = useState(false);
   const [MobileNo, setMobileNo] = useState([]);
   const [locationDenied, setLocationDenied] = useState(false);
+  const [locationError, setLocationError] = useState(null);
 
   useEffect(() => {
     setContactsdata(Array.isArray(user?.contacts) ? user.contacts : []);
@@ -45,9 +46,11 @@ function AfterLogin() {
           contacts: [...(prevUser.contacts || []), newContact],
         }));
         setShowAddContact(false);
+        toast.success('Contact added successfully!');
       }
     } catch (error) {
       console.error('Error adding contact:', error);
+      toast.error('Failed to add contact. Please try again.');
     } finally {
       setShowLoader(false);
     }
@@ -61,13 +64,14 @@ function AfterLogin() {
       });
 
       if (response.status === 200) {
-        console.log('Contact deleted successfully');
         setContactsdata((prevContacts) =>
           prevContacts.filter((contact) => contact._id !== contactId)
         );
+        toast.success('Contact deleted successfully!');
       }
     } catch (error) {
       console.error('Error deleting contact:', error);
+      toast.error('Failed to delete contact. Please try again.');
     } finally {
       setShowLoader(false);
     }
@@ -75,261 +79,216 @@ function AfterLogin() {
 
   const checkLocationSupport = () => {
     if (!navigator.geolocation) {
-      console.error('Geolocation is not supported by this browser');
+      toast.error('Geolocation is not supported by your browser');
       return false;
     }
     return true;
   };
 
-  // Helper function for getting position with promise
-  const getPositionPromise = (options) => {
+  const getChromeLocationInstructions = () => {
+    return (
+      <div>
+        <p className="font-bold">Chrome Location Settings:</p>
+        <ol className="list-decimal pl-5">
+          <li>Click the lock icon in the address bar</li>
+          <li>Select Site settings</li>
+          <li>Scroll to Location</li>
+          <li>Change to Allow</li>
+          <li>Refresh this page</li>
+        </ol>
+        <p className="mt-2">Alternatively: Chrome Settings → Privacy and security → Site Settings → Location</p>
+      </div>
+    );
+  };
+
+  const getPositionWithTimeout = (options) => {
     return new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, reject, options);
+      const timeoutTimer = setTimeout(() => {
+        reject(new Error('Location request timed out'));
+      }, options.timeout || 10000);
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          clearTimeout(timeoutTimer);
+          resolve(position);
+        },
+        (error) => {
+          clearTimeout(timeoutTimer);
+          reject(error);
+        },
+        options
+      );
     });
   };
 
-  // Detect browser name for specific instructions
-  const detectBrowser = () => {
-    const userAgent = navigator.userAgent.toLowerCase();
-
-    if (userAgent.indexOf('chrome') > -1) return 'chrome';
-    if (userAgent.indexOf('firefox') > -1) return 'firefox';
-    if (userAgent.indexOf('safari') > -1 && userAgent.indexOf('chrome') === -1) return 'safari';
-    if (userAgent.indexOf('edge') > -1) return 'edge';
-
-    return 'unknown';
-  };
-
-  // Get browser-specific instructions
-  const getLocationInstructions = () => {
-    const browser = detectBrowser();
-
-    switch (browser) {
-      case 'chrome':
-        return 'Chrome: Settings > Privacy & Security > Site Settings > Location';
-      case 'firefox':
-        return 'Firefox: Settings > Privacy & Security > Permissions > Location';
-      case 'safari':
-        return 'Safari: Settings > Privacy > Location Services';
-      case 'edge':
-        return 'Edge: Settings > Cookies and site permissions > Location';
-      default:
-        return 'Browser settings > Privacy/Security > Location permissions';
-    }
-  };
-
   const handleSOS = async () => {
-    if (!checkLocationSupport()) {
-      toast.error('Geolocation is not supported by this browser');
-      return;
-    }
+    if (!checkLocationSupport()) return;
 
     setShowLoader(true);
-    console.log("Starting SOS sequence...");
-
-    let position = null;
-    let permissionGranted = false;
+    setLocationError(null);
+    setLocationDenied(false);
 
     try {
-      // Check for secure context
-      if (!window.isSecureContext && window.location.hostname !== 'localhost') {
-        toast.error('For security reasons, location access requires HTTPS');
-        throw new Error('Geolocation requires HTTPS or localhost');
+      // Check if we're in production and using HTTPS
+      if (window.location.protocol !== 'https:') {
+        throw new Error('Location access requires HTTPS in production');
       }
 
-      // Check permission status
+      // First try high accuracy with short timeout
+      let position;
       try {
-        const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
-        console.log("Permission API says:", permissionStatus.state);
-        permissionGranted = permissionStatus.state === 'granted';
-
-        if (permissionStatus.state === 'denied') {
-          setLocationDenied(true);
-          const instructions = getLocationInstructions();
-          toast.error(
-            `Location access is denied. Please enable location in your browser settings: ${instructions}`,
-            { autoClose: false }
-          );
-          throw new Error('Location permission denied');
-        }
-      } catch (permError) {
-        console.log("Permission API error:", permError);
-        // Continue anyway as some browsers don't support the permissions API
-      }
-
-      // First try high accuracy
-      try {
-        console.log("Requesting position with high accuracy...");
-        position = await getPositionPromise({
+        position = await getPositionWithTimeout({
           enableHighAccuracy: true,
-          timeout: 10000,
+          timeout: 5000,
           maximumAge: 0
         });
-        console.log("Position received, accuracy:", position.coords.accuracy);
-      } catch (highAccError) {
-        console.error("High accuracy position error:", highAccError);
-
-        // If permission denied, handle specially
-        if (highAccError.code === 1) {
-          setLocationDenied(true);
-          const instructions = getLocationInstructions();
-          toast.error(
-            `Location access denied despite permission API. Please check ${instructions}`,
-            { autoClose: false }
-          );
-          throw highAccError;
-        }
-
-        // Otherwise try with low accuracy
-        console.log("Trying with low accuracy...");
-        try {
-          position = await getPositionPromise({
-            enableHighAccuracy: false,
-            timeout: 10000,
-            maximumAge: 0
-          });
-          console.log("Low accuracy position received, accuracy:", position.coords.accuracy);
-        } catch (lowAccError) {
-          console.error("Both location methods failed");
-          throw highAccError; // Throw original error
-        }
-      }
-
-      // Check if accuracy is too low
-      if (position && position.coords.accuracy > 100000) {
-        console.warn("Very low accuracy:", position.coords.accuracy);
-
-        if (window.confirm(
-          "Your location accuracy is very low (approximate location only). " +
-          "This could be because precise location is disabled. " +
-          "Click OK to continue with approximate location, or Cancel to fix settings and try again."
-        )) {
-          console.log("User accepted low accuracy");
-          // Continue with low accuracy
-        } else {
-          throw new Error("User rejected low accuracy location");
-        }
-      }
-
-      // We have a usable position
-      if (position) {
-        const { latitude, longitude, accuracy } = position.coords;
-        console.log(`Using location: ${latitude}, ${longitude} (accuracy: ${accuracy}m)`);
-
-        // Send emergency alert
-        const contactNumbers = MobileNo.map(contact => contact.MobileNo);
-
-        if (contactNumbers.length === 0) {
-          toast.warning("No emergency contacts found. Please add contacts first.");
-          throw new Error("No emergency contacts");
-        }
-
-        const response = await api.post(Config.EMERGENCYUrl, {
-          contactNumbers,
-          location: { latitude, longitude }
+        console.log('High accuracy position:', position);
+      } catch (highAccuracyError) {
+        console.log('Falling back to standard accuracy');
+        position = await getPositionWithTimeout({
+          enableHighAccuracy: false,
+          timeout: 10000,
+          maximumAge: 30000
         });
+      }
 
-        if (response.status === 200) {
-          toast.success("Emergency alert sent successfully!");
-          console.log('SMS results:', response.data.results);
+      const { latitude, longitude, accuracy } = position.coords;
+      console.log(`Location obtained - Lat: ${latitude}, Long: ${longitude}, Accuracy: ${accuracy}m`);
+
+      if (accuracy > 10000) { // 10km accuracy threshold
+        const confirm = window.confirm(
+          `Your location accuracy is only about ${Math.round(accuracy / 1000)} km. Continue anyway?`
+        );
+        if (!confirm) {
+          throw new Error('User declined low accuracy location');
         }
       }
-    } catch (error) {
-      console.error("Final error:", error);
 
-      // Handle specific error codes
-      if (error.code === 1) {
-        const instructions = getLocationInstructions();
-        alert(`Location permission denied. Please enable location access:\n\n${instructions}\n\nAfter changing settings, refresh this page.`);
+      if (MobileNo.length === 0) {
+        throw new Error('No emergency contacts available');
+      }
+
+      const response = await api.post(Config.EMERGENCYUrl, {
+        contactNumbers: MobileNo.map(contact => contact.MobileNo),
+        location: { latitude, longitude }
+      });
+
+      toast.success('Emergency alert sent successfully!');
+      console.log('Emergency response:', response.data);
+
+    } catch (error) {
+      console.error('SOS Error:', error);
+      setLocationError(error.message);
+
+      if (error.code === 1 || error.message.includes('denied')) {
         setLocationDenied(true);
-      } else if (error.code === 2) {
-        toast.error("Could not determine your location. Please try again in an open area.");
-      } else if (error.code === 3) {
-        toast.error("Location request timed out. Please try again.");
+        toast.error(
+          <div>
+            <p>Location access was denied. Please enable it:</p>
+            {getChromeLocationInstructions()}
+          </div>,
+          { autoClose: false }
+        );
+      } else if (error.code === 2 || error.message.includes('unavailable')) {
+        toast.error('Location unavailable. Please check your network connection and try again.');
+      } else if (error.code === 3 || error.message.includes('time')) {
+        toast.error('Location request timed out. Please try again in an area with better signal.');
       } else {
-        toast.error(`Error: ${error.message || "Unknown error occurred"}`);
+        toast.error(`Error: ${error.message}`);
       }
     } finally {
       setShowLoader(false);
     }
   };
 
-  // Test location function
   const testLocation = () => {
-    if (!checkLocationSupport()) {
-      toast.error('Geolocation is not supported by this browser');
-      return;
-    }
+    if (!checkLocationSupport()) return;
 
-    toast.info("Testing location access...");
+    toast.info('Testing location access...', { autoClose: 3000 });
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude, accuracy } = position.coords;
+        const accuracyKm = Math.round(accuracy / 1000);
 
-        if (accuracy > 100000) {
-          toast.warning(`Location test: Got very low accuracy (${Math.round(accuracy / 1000)} km)`);
-        } else if (accuracy > 10000) {
-          toast.warning(`Location test: Got moderate accuracy (${Math.round(accuracy / 1000)} km)`);
-        } else {
-          toast.success(`Location test successful! Accuracy: ${Math.round(accuracy)} meters`);
-        }
-
-        console.log('Location test details:', {
-          latitude, longitude, accuracy,
-          timestamp: new Date(position.timestamp).toISOString()
+        console.log('Test location result:', {
+          latitude,
+          longitude,
+          accuracy,
+          timestamp: new Date(position.timestamp)
         });
+
+        if (accuracy < 100) {
+          toast.success(`Location test successful! Accuracy: ${accuracy}m`);
+        } else if (accuracy < 1000) {
+          toast.warning(`Location test: Moderate accuracy (${accuracy}m)`);
+        } else {
+          toast.warning(`Location test: Low accuracy (${accuracyKm} km)`);
+        }
       },
       (error) => {
         console.error('Location test error:', error);
-
         if (error.code === 1) {
-          toast.error('Location access denied in test');
           setLocationDenied(true);
+          toast.error(
+            <div>
+              <p>Location access denied in test. Please enable it:</p>
+              {getChromeLocationInstructions()}
+            </div>,
+            { autoClose: false }
+          );
         } else if (error.code === 2) {
-          toast.error('Location unavailable in test');
+          toast.error('Location unavailable during test. Are you offline?');
         } else if (error.code === 3) {
-          toast.error('Location test timed out');
+          toast.error('Location test timed out. Please try again.');
         }
       },
       {
         enableHighAccuracy: true,
-        timeout: 5000,
+        timeout: 8000,
         maximumAge: 0
       }
     );
   };
 
   return (
-    <div className="w-full p-2 bg-slate-50">
+    <div className="w-full p-2 bg-slate-50 min-h-screen">
       {locationDenied && (
         <div className="w-full p-4 bg-red-100 border-l-4 border-red-500 text-red-700 mb-4">
-          <h3 className="font-bold">Location Access Denied</h3>
-          <p className="mb-2">This app needs location access to send your coordinates during emergencies.</p>
-          <p className="text-sm font-bold">How to enable location:</p>
-          <ul className="list-disc pl-5 text-sm">
-            <li>Chrome: Settings → Privacy and security → Site Settings → Location</li>
-            <li>Firefox: Settings → Privacy & Security → Permissions → Location</li>
-            <li>Safari: Preferences → Privacy → Location Services</li>
-            <li>Mobile: Check your device settings for app permissions</li>
-          </ul>
-          <p className="mt-2 text-sm">After enabling, refresh this page and try again.</p>
+          <h3 className="font-bold">Location Access Required</h3>
+          {getChromeLocationInstructions()}
           <button
             onClick={() => window.location.reload()}
-            className="mt-2 px-4 py-1 bg-red-600 text-white text-sm rounded"
+            className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg"
           >
-            Refresh Page
+            Refresh After Changing Settings
           </button>
         </div>
       )}
 
-      <div className="w-full h-[40vh] p-2 flex items-center justify-center flex-col" onClick={handleSOS}>
-        <SOSButton />
+      {locationError && !locationDenied && (
+        <div className="w-full p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 mb-4">
+          <h3 className="font-bold">Location Error</h3>
+          <p>{locationError}</p>
+          <button
+            onClick={testLocation}
+            className="mt-2 px-4 py-1 bg-yellow-600 text-white rounded text-sm"
+          >
+            Test Again
+          </button>
+        </div>
+      )}
+
+      <div className="w-full h-[40vh] p-2 flex items-center justify-center flex-col">
+        <div onClick={handleSOS} className="cursor-pointer">
+          <SOSButton />
+        </div>
         <button
           onClick={(e) => {
-            e.stopPropagation(); // Prevent triggering the parent's onClick
+            e.stopPropagation();
             testLocation();
           }}
-          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm"
+          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition-colors"
         >
           Test Location Access
         </button>
@@ -348,28 +307,35 @@ function AfterLogin() {
                   className="w-16 h-16 rounded-full object-cover"
                   src={contact.photo}
                   alt="Contact"
+                  onError={(e) => {
+                    e.target.src = 'https://via.placeholder.com/64';
+                  }}
                 />
-                <div>
-                  <h2 className="text-gray-700 font-bold">{contact.name}</h2>
-                  <h3 className="text-gray-500">{contact.MobileNo}</h3>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-gray-700 font-bold truncate">{contact.name}</h2>
+                  <h3 className="text-gray-500 truncate">{contact.MobileNo}</h3>
                 </div>
                 <button
                   onClick={() => handleDelete(contact._id)}
-                  className="w-10 h-10 rounded-lg border-none hover:text-red-400"
+                  className="w-10 h-10 rounded-lg border-none hover:text-red-400 transition-colors"
+                  aria-label="Delete contact"
                 >
                   <CircleX className="h-6 w-6" />
                 </button>
               </div>
             ))
           ) : (
-            <h1 className="text-gray-700 font-bold">No Contacts Found</h1>
+            <div className="w-full text-center py-8">
+              <h1 className="text-gray-700 font-bold">No Contacts Found</h1>
+              <p className="text-gray-500 mt-2">Add emergency contacts to use the SOS feature</p>
+            </div>
           )}
         </div>
       </div>
 
       <div className="w-full p-4 flex items-center justify-center flex-col">
         <button
-          className="text-red-400 font-bold flex items-center gap-2 px-4 py-2 hover:bg-red-50 rounded-lg border hover:border-red-300"
+          className={`text-red-400 font-bold flex items-center gap-2 px-4 py-2 hover:bg-red-50 rounded-lg border hover:border-red-300 transition-colors ${contactsdata.length >= 3 ? 'opacity-50 cursor-not-allowed' : ''}`}
           onClick={() => setShowAddContact(true)}
           disabled={contactsdata.length >= 3}
         >
@@ -377,8 +343,8 @@ function AfterLogin() {
           Add New Contact
         </button>
         {contactsdata.length >= 3 && (
-          <span className="text-red-700 text-center">
-            You Can Add Maximum 3 Contacts
+          <span className="text-red-700 text-center mt-2">
+            You can add maximum 3 contacts
           </span>
         )}
       </div>
@@ -391,13 +357,14 @@ function AfterLogin() {
 
       {showAddContact && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-40">
-          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold">Add New Contact</h2>
                 <button
                   onClick={() => setShowAddContact(false)}
-                  className="text-gray-400 hover:text-gray-500"
+                  className="text-gray-400 hover:text-gray-500 transition-colors"
+                  aria-label="Close"
                 >
                   <X className="h-6 w-6" />
                 </button>
@@ -405,50 +372,58 @@ function AfterLogin() {
 
               <form onSubmit={handleSubmit(Submit)} className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium">
+                  <label className="block text-sm font-medium mb-1">
                     Profile Photo
                   </label>
                   <input
                     type="file"
-                    accept="image/png, image/jpg, image/jpeg, image/webp"
-                    className="block w-full px-3 py-2 border rounded-lg"
+                    accept="image/*"
+                    className="block w-full px-3 py-2 border rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                     {...register('photo', { required: true })}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium">Name</label>
+                  <label className="block text-sm font-medium mb-1">Name</label>
                   <input
                     type="text"
-                    className="block w-full px-3 py-2 border rounded-lg"
+                    className="block w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     {...register('name', { required: true })}
+                    placeholder="Contact name"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium">
+                  <label className="block text-sm font-medium mb-1">
                     Contact Number
                   </label>
                   <input
-                    type="text"
-                    className="block w-full px-3 py-2 border rounded-lg"
-                    {...register('MobileNo', { required: true })}
+                    type="tel"
+                    className="block w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    {...register('MobileNo', {
+                      required: true,
+                      pattern: {
+                        value: /^[0-9]{10,15}$/,
+                        message: "Please enter a valid phone number"
+                      }
+                    })}
+                    placeholder="Phone number"
                   />
                 </div>
 
-                <div className="flex justify-end gap-3">
+                <div className="flex justify-end gap-3 pt-4">
                   <button
                     type="button"
                     onClick={() => setShowAddContact(false)}
-                    className="px-4 py-2 text-sm border rounded-lg"
+                    className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg"
+                    className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                   >
-                    Submit
+                    {showLoader ? 'Adding...' : 'Add Contact'}
                   </button>
                 </div>
               </form>
