@@ -82,36 +82,44 @@ function AfterLogin() {
 
   const handleSOS = async () => {
     if (!checkLocationSupport()) {
-      alert('Geolocation is not supported by your browser');
+      toast.error('Geolocation is not supported by your browser');
       return;
     }
 
     setShowLoader(true);
     try {
-
+      // Check for secure context
       if (!window.isSecureContext && window.location.hostname !== 'localhost') {
+        toast.error('For security reasons, location access requires HTTPS');
         throw new Error('Geolocation requires HTTPS or localhost');
       }
 
-
+      // Check permission status first
       const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
-      // console.log('Initial permission status:', permissionStatus.state);
 
-      // If permission is denied, show instructions
       if (permissionStatus.state === 'denied') {
+        toast.error(
+          "Location access was denied. Please enable location in your browser settings and try again.",
+          { autoClose: 5000 }
+        );
 
-        toast("Please enable location access in your browser settings and try again")
-        console.log('Please enable location in your browser settings:',
-          '\nChrome: Settings > Privacy and security > Site Settings > Location',
-          '\nFirefox: Settings > Privacy & Security > Permissions > Location',
-          '\nSafari: Preferences > Privacy > Location Services');
+        // Show browser-specific instructions
+        let browserInstructions = "Please enable location in your browser settings";
+        if (navigator.userAgent.includes("Chrome")) {
+          browserInstructions += ": Settings > Privacy and security > Site Settings > Location";
+        } else if (navigator.userAgent.includes("Firefox")) {
+          browserInstructions += ": Settings > Privacy & Security > Permissions > Location";
+        } else if (navigator.userAgent.includes("Safari")) {
+          browserInstructions += ": Preferences > Privacy > Location Services";
+        }
+
+        console.log(browserInstructions);
         setShowLoader(false);
         return;
       }
 
-
+      // Get position with timeout
       const position = await new Promise((resolve, reject) => {
-
         const timeoutId = setTimeout(() => {
           reject(new Error('Location request timed out'));
         }, 10000);
@@ -119,22 +127,15 @@ function AfterLogin() {
         navigator.geolocation.getCurrentPosition(
           (position) => {
             clearTimeout(timeoutId);
-            console.log('Position successfully received:', {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-              accuracy: position.coords.accuracy
-            });
+            // Check if accuracy is too low (high number = less accurate)
+            if (position.coords.accuracy > 100000) {
+              console.warn('Low accuracy location received:', position.coords.accuracy);
+              toast.warning('Only approximate location available. For better results, try again outdoors.');
+            }
             resolve(position);
           },
           (error) => {
             clearTimeout(timeoutId);
-            console.log('Detailed error information:', {
-              code: error.code,
-              message: error.message,
-              PERMISSION_DENIED: error.code === 1,
-              POSITION_UNAVAILABLE: error.code === 2,
-              TIMEOUT: error.code === 3
-            });
             reject(error);
           },
           {
@@ -146,31 +147,18 @@ function AfterLogin() {
       });
 
       const { latitude, longitude } = position.coords;
-
-
       const contactNumbers = MobileNo.map(contact => contact.MobileNo);
 
-
-      console.log('Sending emergency data:', {
-        contactNumbers,
-        location: { latitude, longitude }
-      });
-
-
+      // Send emergency alert
       const response = await api.post(Config.EMERGENCYUrl, {
         contactNumbers,
         location: { latitude, longitude }
       });
 
       if (response.status === 200) {
-        console.log('Emergency alert sent successfully:', response.data);
-        alert('Emergency alert sent successfully');
-        console.log('SMS results:', response.data.results);
+        toast.success('Emergency alert sent successfully');
       }
-
     } catch (error) {
-      console.error('Full error object:', error);
-
       let errorMessage = 'An unexpected error occurred';
 
       if (error.code === 1) {
@@ -183,8 +171,8 @@ function AfterLogin() {
         errorMessage = error.message;
       }
 
-      console.error('Error message:', errorMessage);
-      toast(errorMessage);
+      console.error('Error sending emergency alert:', error);
+      toast.error(errorMessage);
     } finally {
       setShowLoader(false);
     }
