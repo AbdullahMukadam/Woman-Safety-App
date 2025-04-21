@@ -99,7 +99,7 @@ function AfterLogin() {
 
       // If permission is denied, show instructions
       if (permissionStatus.state === 'denied') {
-        //alert('Please enable location access in your browser settings and try again');
+
         toast("Please enable location access in your browser settings and try again")
         console.log('Please enable location in your browser settings:',
           '\nChrome: Settings > Privacy and security > Site Settings > Location',
@@ -184,7 +184,7 @@ function AfterLogin() {
       }
 
       console.error('Error message:', errorMessage);
-      alert(errorMessage);
+      toast(errorMessage);
     } finally {
       setShowLoader(false);
     }
