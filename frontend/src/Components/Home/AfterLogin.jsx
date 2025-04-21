@@ -15,11 +15,12 @@ function AfterLogin() {
   const { user, setUser } = useContext(AuthContext);
   const [contactsdata, setContactsdata] = useState([]);
   const [showLoader, setShowLoader] = useState(false);
-  const [MobileNo, setMobileNo] = useState([])
+  const [MobileNo, setMobileNo] = useState([]);
+  const [locationDenied, setLocationDenied] = useState(false);
 
   useEffect(() => {
     setContactsdata(Array.isArray(user?.contacts) ? user.contacts : []);
-    setMobileNo(Array.isArray(user?.contacts) ? user.contacts : [])
+    setMobileNo(Array.isArray(user?.contacts) ? user.contacts : []);
   }, [user]);
 
   const Submit = async (formData) => {
@@ -72,157 +73,267 @@ function AfterLogin() {
     }
   };
 
-  /* const checkLocationSupport = () => {
+  const checkLocationSupport = () => {
     if (!navigator.geolocation) {
       console.error('Geolocation is not supported by this browser');
       return false;
     }
     return true;
-  }; */
+  };
+
+  // Helper function for getting position with promise
+  const getPositionPromise = (options) => {
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, options);
+    });
+  };
+
+  // Detect browser name for specific instructions
+  const detectBrowser = () => {
+    const userAgent = navigator.userAgent.toLowerCase();
+
+    if (userAgent.indexOf('chrome') > -1) return 'chrome';
+    if (userAgent.indexOf('firefox') > -1) return 'firefox';
+    if (userAgent.indexOf('safari') > -1 && userAgent.indexOf('chrome') === -1) return 'safari';
+    if (userAgent.indexOf('edge') > -1) return 'edge';
+
+    return 'unknown';
+  };
+
+  // Get browser-specific instructions
+  const getLocationInstructions = () => {
+    const browser = detectBrowser();
+
+    switch (browser) {
+      case 'chrome':
+        return 'Chrome: Settings > Privacy & Security > Site Settings > Location';
+      case 'firefox':
+        return 'Firefox: Settings > Privacy & Security > Permissions > Location';
+      case 'safari':
+        return 'Safari: Settings > Privacy > Location Services';
+      case 'edge':
+        return 'Edge: Settings > Cookies and site permissions > Location';
+      default:
+        return 'Browser settings > Privacy/Security > Location permissions';
+    }
+  };
 
   const handleSOS = async () => {
-    // Clear any previous error states
+    if (!checkLocationSupport()) {
+      toast.error('Geolocation is not supported by this browser');
+      return;
+    }
+
     setShowLoader(true);
     console.log("Starting SOS sequence...");
 
+    let position = null;
+    let permissionGranted = false;
+
     try {
-      // First, check permission explicitly before proceeding
-      console.log("Checking geolocation permission...");
-      let permissionStatus;
+      // Check for secure context
+      if (!window.isSecureContext && window.location.hostname !== 'localhost') {
+        toast.error('For security reasons, location access requires HTTPS');
+        throw new Error('Geolocation requires HTTPS or localhost');
+      }
 
+      // Check permission status
       try {
-        permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
-        console.log("Permission status:", permissionStatus.state);
+        const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
+        console.log("Permission API says:", permissionStatus.state);
+        permissionGranted = permissionStatus.state === 'granted';
+
+        if (permissionStatus.state === 'denied') {
+          setLocationDenied(true);
+          const instructions = getLocationInstructions();
+          toast.error(
+            `Location access is denied. Please enable location in your browser settings: ${instructions}`,
+            { autoClose: false }
+          );
+          throw new Error('Location permission denied');
+        }
       } catch (permError) {
-        console.error("Error checking permission:", permError);
-        // Some browsers might not support permissions API
+        console.log("Permission API error:", permError);
+        // Continue anyway as some browsers don't support the permissions API
       }
 
-      // Only explicitly block if we're certain permission is denied
-      if (permissionStatus && permissionStatus.state === 'denied') {
-        console.log("Permission explicitly denied");
-        alert("Location access is denied. Please enable location in your browser settings.");
-        setShowLoader(false);
-        return;
-      }
+      // First try high accuracy
+      try {
+        console.log("Requesting position with high accuracy...");
+        position = await getPositionPromise({
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        });
+        console.log("Position received, accuracy:", position.coords.accuracy);
+      } catch (highAccError) {
+        console.error("High accuracy position error:", highAccError);
 
-      // Try getting location regardless of what the permission API says
-      console.log("Requesting current position...");
-      const position = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            console.log("Position obtained with accuracy:", pos.coords.accuracy, "meters");
-            resolve(pos);
-          },
-          (err) => {
-            console.error("Geolocation error code:", err.code, "message:", err.message);
-            reject(err);
-          },
-          {
-            enableHighAccuracy: true,
+        // If permission denied, handle specially
+        if (highAccError.code === 1) {
+          setLocationDenied(true);
+          const instructions = getLocationInstructions();
+          toast.error(
+            `Location access denied despite permission API. Please check ${instructions}`,
+            { autoClose: false }
+          );
+          throw highAccError;
+        }
+
+        // Otherwise try with low accuracy
+        console.log("Trying with low accuracy...");
+        try {
+          position = await getPositionPromise({
+            enableHighAccuracy: false,
             timeout: 10000,
             maximumAge: 0
-          }
-        );
-      });
-
-      // If we get here, we successfully got location
-      const { latitude, longitude, accuracy } = position.coords;
-      console.log(`Location: ${latitude}, ${longitude} (accuracy: ${accuracy}m)`);
-
-      // Check accuracy but don't prevent sending alert
-      if (accuracy > 100000) {
-        console.warn("Low accuracy warning:", accuracy);
-        toast("Warning: Your location accuracy is very low. Emergency contacts will receive approximate location only.");
-      } else if (accuracy > 10000) {
-        console.warn("Moderate accuracy warning:", accuracy);
-        toast("Your location accuracy is moderate. For better results, try moving outdoors.");
+          });
+          console.log("Low accuracy position received, accuracy:", position.coords.accuracy);
+        } catch (lowAccError) {
+          console.error("Both location methods failed");
+          throw highAccError; // Throw original error
+        }
       }
 
-      // Send emergency alert regardless of accuracy
-      const contactNumbers = MobileNo.map(contact => contact.MobileNo);
-      console.log("Sending emergency alert to:", contactNumbers);
+      // Check if accuracy is too low
+      if (position && position.coords.accuracy > 100000) {
+        console.warn("Very low accuracy:", position.coords.accuracy);
 
-      const response = await api.post(Config.EMERGENCYUrl, {
-        contactNumbers,
-        location: { latitude, longitude }
-      });
-
-      if (response.status === 200) {
-        toast("Emergency alert sent successfully!");
+        if (window.confirm(
+          "Your location accuracy is very low (approximate location only). " +
+          "This could be because precise location is disabled. " +
+          "Click OK to continue with approximate location, or Cancel to fix settings and try again."
+        )) {
+          console.log("User accepted low accuracy");
+          // Continue with low accuracy
+        } else {
+          throw new Error("User rejected low accuracy location");
+        }
       }
 
+      // We have a usable position
+      if (position) {
+        const { latitude, longitude, accuracy } = position.coords;
+        console.log(`Using location: ${latitude}, ${longitude} (accuracy: ${accuracy}m)`);
+
+        // Send emergency alert
+        const contactNumbers = MobileNo.map(contact => contact.MobileNo);
+
+        if (contactNumbers.length === 0) {
+          toast.warning("No emergency contacts found. Please add contacts first.");
+          throw new Error("No emergency contacts");
+        }
+
+        const response = await api.post(Config.EMERGENCYUrl, {
+          contactNumbers,
+          location: { latitude, longitude }
+        });
+
+        if (response.status === 200) {
+          toast.success("Emergency alert sent successfully!");
+          console.log('SMS results:', response.data.results);
+        }
+      }
     } catch (error) {
-      console.error("Full error details:", error);
+      console.error("Final error:", error);
 
-      // Simplify error handling
+      // Handle specific error codes
       if (error.code === 1) {
-        toast("Location permission denied. Please enable location access in your browser settings.");
+        const instructions = getLocationInstructions();
+        alert(`Location permission denied. Please enable location access:\n\n${instructions}\n\nAfter changing settings, refresh this page.`);
+        setLocationDenied(true);
       } else if (error.code === 2) {
-        toast("Location unavailable. Please try again in a different area.");
+        toast.error("Could not determine your location. Please try again in an open area.");
       } else if (error.code === 3) {
-        toast("Location request timed out. Please try again.");
+        toast.error("Location request timed out. Please try again.");
       } else {
-        toast(`Error: ${error.message || "Unknown error occurred"}`);
+        toast.error(`Error: ${error.message || "Unknown error occurred"}`);
       }
     } finally {
       setShowLoader(false);
     }
   };
 
+  // Test location function
   const testLocation = () => {
-    let isHandled = false;
-
-    if (!navigator.geolocation) {
-      alert('Geolocation is not supported by this browser');
+    if (!checkLocationSupport()) {
+      toast.error('Geolocation is not supported by this browser');
       return;
     }
 
-    try {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          if (isHandled) return;
-          isHandled = true;
+    toast.info("Testing location access...");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
 
-          console.log('Location test successful:', {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy,
-            timestamp: new Date(position.timestamp).toISOString()
-          });
-          alert('Location test successful! Check console for details.');
-        },
-        (error) => {
-          if (isHandled) return;
-          isHandled = true;
-
-          console.error('Location test error:', {
-            code: error.code,
-            message: error.message,
-            timestamp: new Date().toISOString()
-          });
-          alert(`Location test failed: ${error.message}`);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: 0
+        if (accuracy > 100000) {
+          toast.warning(`Location test: Got very low accuracy (${Math.round(accuracy / 1000)} km)`);
+        } else if (accuracy > 10000) {
+          toast.warning(`Location test: Got moderate accuracy (${Math.round(accuracy / 1000)} km)`);
+        } else {
+          toast.success(`Location test successful! Accuracy: ${Math.round(accuracy)} meters`);
         }
-      );
-    } catch (e) {
-      console.error('Unexpected error during location test:', e);
-    }
-  };
 
+        console.log('Location test details:', {
+          latitude, longitude, accuracy,
+          timestamp: new Date(position.timestamp).toISOString()
+        });
+      },
+      (error) => {
+        console.error('Location test error:', error);
+
+        if (error.code === 1) {
+          toast.error('Location access denied in test');
+          setLocationDenied(true);
+        } else if (error.code === 2) {
+          toast.error('Location unavailable in test');
+        } else if (error.code === 3) {
+          toast.error('Location test timed out');
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
+      }
+    );
+  };
 
   return (
     <div className="w-full p-2 bg-slate-50">
-      <div className="w-full h-[40vh] p-2 flex items-center justify-center " onClick={handleSOS}>
+      {locationDenied && (
+        <div className="w-full p-4 bg-red-100 border-l-4 border-red-500 text-red-700 mb-4">
+          <h3 className="font-bold">Location Access Denied</h3>
+          <p className="mb-2">This app needs location access to send your coordinates during emergencies.</p>
+          <p className="text-sm font-bold">How to enable location:</p>
+          <ul className="list-disc pl-5 text-sm">
+            <li>Chrome: Settings → Privacy and security → Site Settings → Location</li>
+            <li>Firefox: Settings → Privacy & Security → Permissions → Location</li>
+            <li>Safari: Preferences → Privacy → Location Services</li>
+            <li>Mobile: Check your device settings for app permissions</li>
+          </ul>
+          <p className="mt-2 text-sm">After enabling, refresh this page and try again.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 px-4 py-1 bg-red-600 text-white text-sm rounded"
+          >
+            Refresh Page
+          </button>
+        </div>
+      )}
+
+      <div className="w-full h-[40vh] p-2 flex items-center justify-center flex-col" onClick={handleSOS}>
         <SOSButton />
+        <button
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent triggering the parent's onClick
+            testLocation();
+          }}
+          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm"
+        >
+          Test Location Access
+        </button>
       </div>
-      {/* <button onClick={testLocation} className="your-button-class">
-        Test Location Access
-      </button> */}
 
       <div className="w-full p-4">
         <h1 className="text-gray-900 text-2xl font-bold">Emergency Contacts</h1>
