@@ -170,18 +170,18 @@ function AfterLogin() {
         }
       });
 
-      if (response.status === "success") {
-        toast.success(
-          <div>
-            <p>Emergency alert sent successfully!</p>
-            <p className="text-sm mt-1">
-              {location.method === 'gps' ? 'Using precise GPS location' :
-                'Using approximate IP-based location'}
-            </p>
-          </div>
-        );
 
-      }
+      toast.success(
+        <div>
+          <p>Emergency alert sent successfully!</p>
+          <p className="text-sm mt-1">
+            {location.method === 'gps' ? 'Using precise GPS location' :
+              'Using approximate IP-based location'}
+          </p>
+        </div>
+      );
+
+
 
 
     } catch (error) {
@@ -245,15 +245,18 @@ function AfterLogin() {
       <div className="w-full h-[40vh] p-2 flex items-center justify-center " onClick={handleSOS}>
         <SOSButton />
       </div>
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          testLocation();
-        }}
-        className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition-colors"
-      >
-        Test Location
-      </button>
+      <div className='w-full p-2 flex items-center justify-center'>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            testLocation();
+          }}
+          className="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 transition-colors"
+        >
+          Test Location
+        </button>
+      </div>
+
 
       <div className="w-full p-4">
         <h1 className="text-gray-900 text-2xl font-bold">Emergency Contacts</h1>
