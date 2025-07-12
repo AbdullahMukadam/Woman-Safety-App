@@ -32,18 +32,13 @@ function Navbar() {
     const Data = [
         {
             name: "Testimonials",
-            url: "/",
+            url: "#testimony",
             status: !auth
         },
         {
             name: "Contact Us",
             url: "mailto:abdullahmukadam21@gmail.com",
             status: !auth
-        },
-        {
-            name: "Progress",
-            url: "mailto:abdullahmukadam21@gmail.com",
-            status: auth
         },
         {
             name: "Contact Us",

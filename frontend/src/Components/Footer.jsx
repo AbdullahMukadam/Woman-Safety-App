@@ -8,7 +8,7 @@ function Footer() {
         <div className='w-full p-2'>
           <img className='h-8' src="/logo.svg" alt="Logo" />
           <h1 className='font-[300] text-[15px] md:text-[20px] md:font-normal md:w-[60%] mt-4'>
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Nesciunt, laudantium mollitia qui facere ipsum error maiores ipsam itaque illum expedita.
+          Empowering Women with Advanced Safety Technology - Your Personal Guardian That Never Sleeps, Ensuring Youre Protected Wherever Life Takes You
           </h1>
         </div>
       </div>

@@ -5,19 +5,19 @@ function Testimony() {
     const testimonials = [
         {
             name: 'Alice Dorman',
-            content: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit. Beatae magni deleniti, quos temporibus repudiandae cupiditate minus autem repellat quasi omnis praesentium harum laborum, animi voluptatibus totam.'
+            content: 'This platform has completely transformed how we manage our business. The intuitive interface and powerful features have saved us countless hours.'
         },
         {
             name: 'John Smith',
-            content: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit. Beatae magni deleniti, quos temporibus repudiandae cupiditate minus autem repellat quasi omnis praesentium harum laborum, animi voluptatibus totam.'
+            content: 'Outstanding service and support! The team went above and beyond to ensure our success. Highly recommend to anyone looking for quality solutions.'
         },
         {
             name: 'Emma Wilson',
-            content: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit. Beatae magni deleniti, quos temporibus repudiandae cupiditate minus autem repellat quasi omnis praesentium harum laborum, animi voluptatibus totam.'
+            content: 'The results speak for themselves. We\'ve seen a 300% increase in efficiency since implementing this solution. Game-changer for our workflow.'
         },
         {
             name: 'Michael Brown',
-            content: 'Lorem ipsum, dolor sit amet consectetur adipisicing elit. Beatae magni deleniti, quos temporibus repudiandae cupiditate minus autem repellat quasi omnis praesentium harum laborum, animi voluptatibus totam.'
+            content: 'Exceptional quality and reliability. The attention to detail and customer-focused approach makes this stand out from the competition.'
         }
     ];
 
